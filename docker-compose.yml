@@ -1,0 +1,16 @@
+services:
+  story-runner:
+    build: .
+    container_name: story-runner
+    env_file: .env
+    ports:
+      - "80:8000"
+    restart: unless-stopped
+
+  ai-basics:
+    build: ./ai-basics
+    container_name: ai-basics
+    env_file: .env
+    ports:
+      - "3100:3100"
+    restart: unless-stopped

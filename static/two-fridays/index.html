@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two Fridays</title>
+
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: comic strip. Title splash with action rays, scene rail as numbered strip tiles,
+   story panel (speech bubble + "meanwhile" caption) beside a cartoon monitor showing the lab. Fortinet red + ink palette. */
+:root{
+  --red:#DA291C; --red-text:#B8211A; --red-soft:#FFE1DD;
+  --ink:#131E29; --gray:#768692;
+  --bg:#FFF8EC; --dots:rgba(19,30,41,.07); --surface:#FFFFFF; --sunk:#FFF1D6; --line:#131E29;
+  --fg:#131E29; --muted:#4F5F6C; --shadow:#131E29;
+  --ok:#00A057; --warn:#C26300; --bad:#B8211A; --cap:#FFD100;
+  --band:#131E29; --band-fg:#FFFFFF; --band-muted:#C3CED4;
+  --con-bg:#131E29; --con-panel:#1E2D3C; --con-fg:#E9EEF0; --con-muted:#9CABB5; --con-line:#2E4152; --bezel:#D9E1E2;
+  --s-ok:#00BF65; --s-warn:#FFD100; --s-bad:#F2493C; --s-info:#6AD1E3;
+  --skin:#F2C7A5; --skin2:#A8714E;
+  --f-head:"Fredoka","Arial Rounded MT Bold","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Nunito","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --red-text:#FF6A5C; --red-soft:#40201E;
+  --bg:#141B24; --dots:rgba(255,255,255,.05); --surface:#1E2A37; --sunk:#2A2418; --line:#E9EEF0;
+  --fg:#F2F5F6; --muted:#B4C0C8; --shadow:#000000; --ok:#2FD487; --warn:#FFB347; --bad:#FF6A5C;
+  --band:#0A1118; --con-bg:#0A1118; --bezel:#3A4A58; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --red-text:#FF6A5C; --red-soft:#40201E;
+  --bg:#141B24; --dots:rgba(255,255,255,.05); --surface:#1E2A37; --sunk:#2A2418; --line:#E9EEF0;
+  --fg:#F2F5F6; --muted:#B4C0C8; --shadow:#000000; --ok:#2FD487; --warn:#FFB347; --bad:#FF6A5C;
+  --band:#0A1118; --con-bg:#0A1118; --bezel:#3A4A58; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);background-image:radial-gradient(var(--dots) 1.4px,transparent 1.6px);background-size:18px 18px;color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+.ink{border:3px solid var(--line);box-shadow:5px 5px 0 var(--shadow);border-radius:14px}
+header.band{position:relative;overflow:hidden;background:var(--band);color:var(--band-fg);border:3px solid var(--line);box-shadow:6px 6px 0 var(--red);border-radius:18px;padding:24px 26px 22px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;isolation:isolate}
+header.band svg.rays{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.eyebrow{display:inline-block;font-family:var(--f-head);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;background:var(--cap);color:var(--ink);border:2px solid var(--ink);padding:2px 10px;border-radius:6px;transform:rotate(-2deg)}
+h1{font-family:var(--f-head);font-weight:700;font-size:clamp(30px,4.2vw,48px);line-height:1.02;margin:10px 0 0;text-wrap:balance;max-width:16ch;text-shadow:3px 3px 0 rgba(0,0,0,.35)}
+h1 em{font-style:normal;color:var(--red);-webkit-text-stroke:1.5px #fff;paint-order:stroke fill}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.clocks{display:flex;gap:10px;flex-wrap:wrap}
+.clock{background:#fff;color:var(--ink);border:3px solid var(--ink);border-radius:12px;padding:5px 12px 7px;display:grid;min-width:150px;box-shadow:4px 4px 0 var(--red)}
+.clock.new{box-shadow:4px 4px 0 var(--s-ok)}
+.clock small{font-family:var(--f-head);font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#4F5F6C}
+.clock b{font-family:var(--f-head);font-weight:700;font-size:27px;font-variant-numeric:tabular-nums;line-height:1.1}
+.clock.old b{color:#B8211A}.clock.new b{color:#00874A}
+.seg{display:inline-flex;border:3px solid #fff;border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--band-muted);font:700 13px var(--f-body);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.btn{border:3px solid var(--line);background:var(--surface);color:var(--fg);font:800 13.5px var(--f-body);padding:7px 14px;border-radius:10px;cursor:pointer;box-shadow:3px 3px 0 var(--shadow);transition:transform .08s,box-shadow .08s}
+.btn:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+.btn:active:not(:disabled){transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
+.btn:disabled{opacity:.4;cursor:default}
+header .btn{background:#fff;color:var(--ink);border-color:var(--ink);box-shadow:3px 3px 0 var(--red)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+.rail{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+@media (max-width:900px){.rail{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.rail button{text-align:left;border:3px solid var(--line);border-radius:10px;background:var(--surface);padding:7px 10px;cursor:pointer;color:var(--muted);font:700 12.5px/1.25 var(--f-body);display:grid;gap:1px;min-width:0;box-shadow:3px 3px 0 var(--shadow)}
+.rail button b{font-family:var(--f-head);font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.rail button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail button[aria-current="step"]{background:var(--red);color:#fff;transform:translateY(-2px)}
+.rail button[aria-current="step"] b{color:#fff}
+.rail button.done:not([aria-current]){background:var(--sunk)}
+.rail button.done b::after{content:" ★";color:var(--warn)}
+.rail button[aria-current="step"].done b::after{color:var(--cap)}
+.stage{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:22px;align-items:start}
+@media (max-width:900px){.stage{grid-template-columns:1fr}}
+.story{background:var(--surface);border:3px solid var(--line);box-shadow:6px 6px 0 var(--shadow);border-radius:16px;padding:20px;display:grid;gap:16px;min-width:0}
+.panelhead{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:center}
+.art{width:112px;height:96px;border:3px solid var(--line);border-radius:12px;background:var(--red-soft);display:grid;place-items:center;transform:rotate(2deg);overflow:hidden}
+.art svg{width:100%;height:100%}
+.when{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.when .t{font-family:var(--f-head);font-weight:700;font-size:14px;color:#fff;background:var(--red);border:2px solid var(--line);padding:1px 10px;border-radius:8px;font-variant-numeric:tabular-nums;transform:rotate(-2deg)}
+.story h2{font-family:var(--f-head);font-weight:700;font-size:28px;line-height:1.1;margin:6px 0 0;text-wrap:balance}
+.label{font-family:var(--f-head);font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.bubble{position:relative;background:var(--surface);border:3px solid var(--line);border-radius:18px;padding:12px 16px;margin:0 0 10px 0}
+.bubble::after{content:"";position:absolute;left:28px;bottom:-15px;width:20px;height:20px;background:var(--surface);border-right:3px solid var(--line);border-bottom:3px solid var(--line);transform:skewX(30deg) rotate(45deg)}
+.say{margin:0;font-size:17px;line-height:1.55;max-width:60ch;font-weight:700}
+.usual{position:relative;background:var(--sunk);border:3px solid var(--line);border-radius:12px;padding:22px 14px 12px;display:grid;gap:8px;margin-top:8px}
+.usual .label{position:absolute;top:-14px;left:12px;margin:0;background:var(--cap);color:var(--ink);border:2px solid var(--ink);border-radius:6px;padding:1px 9px;transform:rotate(-1.5deg)}
+.usual ol{margin:0;padding-left:20px;display:grid;gap:3px;font-size:14.5px}
+.usual ol li::marker{font-family:var(--f-head);font-weight:700;color:var(--red-text)}
+.usual .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);font-weight:700}
+.usual input{width:5ch;font:700 17px var(--f-head);background:var(--surface);border:3px solid var(--line);border-radius:8px;color:var(--red-text);padding:1px 6px;text-align:right}
+.queued{color:#fff;background:var(--red);border:2px solid var(--line);border-radius:8px;padding:1px 8px;display:inline-block;transform:rotate(-1deg)}
+.fabmin{color:var(--ok);font-family:var(--f-head);font-size:17px}
+.run{display:flex;gap:10px;flex-wrap:wrap}
+.btn-run{background:var(--red);color:#fff;border:3px solid var(--line);font:700 17px var(--f-head);padding:10px 22px;border-radius:14px;cursor:pointer;box-shadow:5px 5px 0 var(--shadow);transition:transform .08s,box-shadow .08s}
+.btn-run:hover:not(:disabled){transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--shadow)}
+.btn-run:active:not(:disabled){transform:translate(5px,5px);box-shadow:0 0 0 var(--shadow)}
+.btn-run:disabled{opacity:.5;cursor:default}
+.hook{font-family:var(--f-mono);font-size:12px;background:var(--bg);border:2px dashed var(--muted);border-radius:10px;padding:8px 10px;color:var(--muted);overflow-x:auto;white-space:pre}
+/* cartoon monitor */
+.console{background:var(--bezel);border:3px solid var(--line);border-radius:22px;padding:12px 12px 26px;box-shadow:6px 6px 0 var(--shadow);min-width:0;position:relative}
+.console::after{content:"";position:absolute;left:50%;bottom:8px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--s-ok);border:2px solid var(--ink)}
+.screen{background:var(--con-bg);color:var(--con-fg);border:3px solid var(--ink);border-radius:12px;overflow:hidden}
+.con-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:var(--con-panel);border-bottom:2px solid var(--con-line);font-family:var(--f-mono);font-size:12px;color:var(--con-muted);flex-wrap:wrap}
+.con-head .dotsrow{display:inline-flex;gap:5px;margin-right:8px;vertical-align:middle}
+.con-head .dotsrow i{width:10px;height:10px;border-radius:50%;background:var(--s-bad);display:inline-block}
+.con-head .dotsrow i:nth-child(2){background:var(--s-warn)}.con-head .dotsrow i:nth-child(3){background:var(--s-ok)}
+.tag{font-family:var(--f-head);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:var(--s-warn);color:var(--ink);padding:1px 8px;border-radius:6px;border:2px solid var(--ink)}
+.con-body{padding:16px;display:grid;gap:14px;min-height:400px;align-content:start}
+.log{font-family:var(--f-mono);font-size:12px;line-height:1.7;color:var(--con-muted);background:var(--con-panel);border-radius:8px;padding:8px 10px;min-height:2em;overflow-x:auto}
+.log .ok{color:var(--s-ok)}.log .warn{color:var(--s-warn)}.log .bad{color:var(--s-bad)}.log .cmd{color:var(--s-info)}
+.idle{color:var(--con-muted);font-size:14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.dev{background:var(--con-panel);border:2px solid var(--con-line);border-radius:10px;padding:9px 10px;display:grid;gap:4px;animation:boing .45s cubic-bezier(.3,1.6,.5,1) both}
+.dev .k{font-size:11px;font-weight:800;color:var(--con-muted);letter-spacing:.06em;text-transform:uppercase}
+.dev .v{font-family:var(--f-head);font-weight:600;font-size:15px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;padding:2px 9px;border-radius:999px;width:max-content;max-width:100%;font-weight:600}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.p-ok{color:var(--s-ok);background:rgba(0,191,101,.15)}.p-warn{color:var(--s-warn);background:rgba(255,209,0,.14)}.p-bad{color:#fff;background:var(--red);animation:wobble .5s ease 2}.p-idle{color:var(--con-muted);background:rgba(156,171,181,.15)}
+.section-t{font-family:var(--f-head);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--con-muted)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--con-line);white-space:nowrap}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--con-muted);font-weight:800}
+.tbl{overflow-x:auto}
+.search{display:flex;gap:8px;flex-wrap:wrap}
+.search input{flex:1;min-width:0;background:var(--con-panel);border:2px solid var(--con-line);color:var(--con-fg);font:14px var(--f-mono);padding:8px 10px;border-radius:10px}
+.search .btn{background:var(--con-panel);color:var(--con-muted);border-color:var(--con-line);box-shadow:none}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;font-size:13.5px;margin:0}
+.kv dt{font-size:11px;font-weight:800;color:var(--con-muted);text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+.kv dd{margin:0}
+.bars{display:grid;gap:7px}
+.bar{display:grid;grid-template-columns:110px 1fr 56px;gap:8px;align-items:center;font-size:13px}
+.bar i{display:block;height:12px;border-radius:6px;background:var(--s-info);transform-origin:left;animation:grow .7s cubic-bezier(.3,1.4,.5,1) both}
+.bar em{font-style:normal;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--con-muted)}
+.big{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.big div{background:var(--con-panel);border:2px solid var(--con-line);border-radius:10px;padding:10px 12px;animation:boing .45s cubic-bezier(.3,1.6,.5,1) both}
+.big b{display:block;font-family:var(--f-head);font-weight:700;font-size:28px;font-variant-numeric:tabular-nums}
+.big span{font-size:12.5px;color:var(--con-muted)}
+.persona{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.persona .face{width:84px;height:84px}
+.persona b{font-family:var(--f-head);font-size:22px;font-weight:700}
+.ticket{background:var(--con-panel);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13.5px;animation:boing .45s cubic-bezier(.3,1.6,.5,1) both}
+.ticket .tm{font-family:var(--f-mono);font-size:12px;color:var(--con-muted)}
+.chart{overflow-x:auto}
+.chart svg{display:block;min-width:560px;width:100%;height:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--con-muted)}
+footer.nav{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.hint{font-size:12.5px;color:var(--muted);font-weight:700}
+kbd{font-family:var(--f-mono);font-size:11px;border:2px solid var(--line);border-radius:5px;padding:0 5px;background:var(--surface)}
+@keyframes boing{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+@keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(6deg)}}
+.art.shake svg{animation:ring .6s ease 3;transform-origin:50% 60%}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.mail{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;color:#131E29;border:3px solid var(--ink);border-radius:10px;padding:9px 12px;animation:boing .45s cubic-bezier(.3,1.6,.5,1) both;transition:opacity .3s}
+.mail .unread{width:10px;height:10px;border-radius:50%;background:var(--red)}
+.mail .subj{font-size:13.5px;color:#4F5F6C}
+.mail .mt{font-family:var(--f-mono);font-size:12px;color:#4F5F6C}
+.mail.opened{opacity:.55}.mail.opened .unread{background:transparent;border:2px solid #9CABB5}
+.sheet{background:var(--con-panel);border:2px solid var(--con-line);border-radius:12px;padding:12px;display:grid;gap:10px;animation:boing .45s cubic-bezier(.3,1.6,.5,1) both}
+.sheet-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-family:var(--f-head);font-weight:600;font-size:14px}
+.legendmini{font-family:var(--f-body);font-weight:700;font-size:11.5px;color:var(--con-muted);display:inline-flex;align-items:center;gap:6px}
+.legendmini .lb{width:16px;height:9px;border-radius:2px;background:rgba(106,209,227,.3)}
+.minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.minis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mini{background:var(--con-bg);border:2px solid var(--con-line);border-radius:10px;padding:8px;display:grid;gap:4px;min-width:0;animation:boing .4s cubic-bezier(.3,1.6,.5,1) both}
+.mini.hot{border-color:var(--s-bad);box-shadow:0 0 0 2px rgba(242,73,60,.35)}
+.mini-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:11.5px;font-weight:800;color:var(--con-muted);text-transform:uppercase;letter-spacing:.04em}
+.mini-h b{font-family:var(--f-head);font-size:16px;color:var(--con-fg);text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
+.mini svg{width:100%;height:58px;display:block}
+.mini-f{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:9.5px;color:var(--con-muted)}
+.mini .pill{font-size:10px}
+.spikebtn{justify-self:start;background:var(--con-panel);color:var(--con-fg);border-color:var(--con-fg);box-shadow:3px 3px 0 var(--red)}
+.home{display:inline-block;margin-right:8px;color:#fff;font-weight:800;font-size:13px;text-decoration:none;border-bottom:2px solid var(--red)}
+.home:hover{color:var(--cap)}
+</style>
+
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="band">
+    <svg class="rays" viewBox="0 0 1000 260" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+      <defs><radialGradient id="rg" cx="860" cy="130" r="620" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#DA291C" stop-opacity="0"/><stop offset=".55" stop-color="#DA291C" stop-opacity=".22"/><stop offset="1" stop-color="#DA291C" stop-opacity=".5"/></radialGradient></defs>
+      <g><polygon points="860,130 1000,-60 1000,10" fill="rgba(218,41,28,.55)"/><polygon points="860,130 1000,40 1000,95" fill="rgba(255,255,255,.07)"/><polygon points="860,130 1000,130 1000,200" fill="rgba(218,41,28,.45)"/><polygon points="860,130 1000,240 1000,340" fill="rgba(255,255,255,.07)"/><polygon points="860,130 900,330 780,330" fill="rgba(218,41,28,.4)"/><polygon points="860,130 640,330 540,330" fill="rgba(255,255,255,.06)"/><polygon points="860,130 380,330 260,330" fill="rgba(218,41,28,.3)"/><polygon points="860,130 0,300 0,250" fill="rgba(255,255,255,.05)"/><polygon points="860,130 700,-70 600,-70" fill="rgba(218,41,28,.4)"/><polygon points="860,130 460,-70 370,-70" fill="rgba(255,255,255,.06)"/><polygon points="860,130 200,-70 120,-70" fill="rgba(218,41,28,.25)"/><circle cx="860" cy="130" r="26" fill="#DA291C"/></g>
+    </svg>
+    <div>
+      <a href="/" class="home">← All demos</a> <div class="eyebrow" id="eyebrow">A day told twice</div>
+      <h1 id="h1">The <em>Friday</em> Before the Long Weekend</h1>
+    </div>
+    <div class="controls">
+      <div class="clocks" aria-live="polite">
+        <div class="clock old"><small>The usual way</small><b id="c-old">7:45 AM</b></div>
+        <div class="clock new"><small>With the Fabric</small><b id="c-new">7:45 AM</b></div>
+      </div>
+      <div class="seg" role="group" aria-label="Customer profile">
+        <button id="p-gov" aria-pressed="true">City / County</button>
+        <button id="p-edu" aria-pressed="false">Higher Ed</button>
+      </div>
+      <button class="btn" id="reset">Reset to baseline</button>
+    </div>
+  </header>
+
+  <nav class="rail" id="rail" aria-label="Scenes"></nav>
+
+  <main class="stage">
+    <section class="story" aria-live="polite">
+      <div class="panelhead">
+        <div><div class="when"><span class="t" id="s-time"></span><span class="label" id="s-num" style="margin:0"></span></div><h2 id="s-title"></h2></div>
+        <div class="art" id="art" aria-hidden="true"></div>
+      </div>
+      <div><div class="label">What you say</div><div class="bubble"><p class="say" id="s-say"></p></div></div>
+      <div class="usual" id="usual"></div>
+      <div class="run"><button class="btn-run" id="run">Run it with the Fabric</button></div>
+      <div id="hookwrap"><div class="label">Live hook (to build)</div><div class="hook" id="s-hook"></div></div>
+    </section>
+
+    <section class="console">
+      <div class="screen">
+        <div class="con-head"><span><span class="dotsrow"><i></i><i></i><i></i></span><span id="con-path"></span></span><span class="tag" id="mode-tag">Simulated</span></div>
+        <div class="con-body" id="con"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="nav">
+    <button class="btn" id="prev">← Previous</button>
+    <span class="hint"><kbd>←</kbd> <kbd>→</kbd> scene · <kbd>Space</kbd> run · <kbd>R</kbd> reset · red minutes are editable, use your own numbers</span>
+    <button class="btn" id="next">Next →</button>
+  </footer>
+</div>
+
+<script>
+const slow=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait=ms=>new Promise(r=>setTimeout(r,slow?ms:40));
+
+const PROFILES={
+ gov:{hero:"Dana",initials:"DB",heroLine:"Dana Brooks is the IT department for the City of Cedar Bend: 18,000 residents, 140 employees, eleven buildings, one Dana.",
+   day:"The Friday Before Thanksgiving Weekend",org:"City of Cedar Bend",dept:"city hall",
+   apWhere:"council chambers, before Tuesday's meeting",segAsk:"Public Works installed new cameras at the yard. They need their own network, today.",
+   vlan:"PW-Cameras",ssid:"CB-Fleet",caller:"Kara White",callerRole:"Utility Billing Clerk",boss:"the city manager",bossAsk:"wants a security summary for Monday's council packet",
+   crisisWho:"a utility billing laptop",crisisWhere:"the Water Department office across town",home:"her kids' school play at 6:00",
+   apps:[["Microsoft 365",41],["Tyler Munis",22],["Teams",16],["ArcGIS",11],["YouTube",10]]},
+ edu:{hero:"Marcus",initials:"MR",heroLine:"Marcus Reed is one of two network admins at Flint Hills University: 6,200 students, 38 buildings, and a residence life team that texts him directly.",
+   day:"The Friday Before Move-In Weekend",org:"Flint Hills University",dept:"the Admin building",
+   apWhere:"Wheeler Hall lounge, before families arrive Sunday",segAsk:"Res Life says 400 smart TVs and game consoles show up Sunday. They need their own network, today.",
+   vlan:"ResHall-IoT",ssid:"FHU-Play",caller:"Jordan Martinez",callerRole:"Financial Aid Counselor",boss:"the CIO",bossAsk:"wants a security summary for Monday's cabinet meeting",
+   crisisWho:"a financial aid laptop",crisisWhere:"Anderson Hall on the far side of campus",home:"his daughter's soccer game at 6:00",
+   apps:[["Microsoft 365",38],["Canvas LMS",24],["Zoom",17],["Steam",12],["Netflix",9]]}
+};
+let profile="gov"; const P=()=>PROFILES[profile];
+
+/* at = minutes after midnight when the request lands; old = default minutes the usual way; fab = minutes with the Fabric */
+const SCENES=[
+ {kind:"prologue",title:()=>`Meet ${P().hero}`,time:"7:40 AM",
+  say:()=>`${P().heroLine} You know this person. Some of you are this person. Today is ${P().day.toLowerCase()}, and ${P().hero} has plans: ${P().home}. Let's see if that happens.`,
+  run:async c=>{
+    c.append(sec(`${P().hero}'s queue · Friday`));
+    const t=[["7:45","Did anything happen overnight?","routine"],["8:30","New AP for the "+P().apWhere,"request"],["9:45",P().segAsk.split('.')[0],"urgent"],["11:30",P().caller+": \"the network is slow\"","ticket"],["1:30",cap(P().boss)+" "+P().bossAsk,"exec"],["4:47","???","—"]];
+    for(const x of t){await wait(220); c.insertAdjacentHTML('beforeend',`<div class="ticket"><span class="tm">${x[0]}</span><span>${x[1]}</span><span class="pill ${x[2]=='urgent'||x[2]=='exec'?'p-warn':'p-idle'}">${x[2]}</span></div>`);}
+    log(c,`Two versions of this day run side by side. Watch the clocks at the top.`);
+  }},
+ {title:"The coffee report",at:465,old:40,fab:5,
+  say:()=>`Every lean IT person starts the day making sure nothing broke overnight. ${P().hero}'s FortiAnalyzer emails a one-page Daily Summary at 6:00 AM. ${P().hero} calls it the coffee report: open it, look for spikes. If it looks like every other day, move on.`,
+  usual:["Log into the firewall and scan the logs","Open the switch vendor's portal","Open the wireless controller","Check the syslog box and line up timestamps by hand"],
+  hook:"FAZ: Reports › Daily Summary template, scheduled 6:00 AM\nOutput profile → email to IT\nLive pull: FAZ JSON-RPC /report/adom/root/run  +  /report/adom/root/reports/data",
+  run:async c=>{
+    c.append(sec('Inbox · 7:45 AM'));
+    const m=el('div','mail'); m.innerHTML=`<span class="unread"></span><div><b>FortiAnalyzer</b><div class="subj">Daily Summary Report · ${P().org}</div></div><span class="mt">6:00 AM</span>`;
+    c.append(m); await wait(900); m.classList.add('opened');
+    const sheet=el('div','sheet'); c.append(sheet);
+    const L=log(c,'');
+    const draw=async spike=>{
+      sheet.innerHTML=`<div class="sheet-h"><span>Daily Summary · last 24 hours</span><span class="legendmini"><i class="lb"></i>usual range, last 7 days</span></div><div class="minis"></div>`;
+      const g=sheet.querySelector('.minis');
+      for(const mt of METRICS){ g.append(mini(mt,spike)); await wait(140); }
+      L.innerHTML = spike
+        ? '<span class="bad">▲</span> Failed VPN logins and IPS events spiked at 2 AM. Same sheet, different shape: that one gets a look before the coffee gets cold.'
+        : '<span class="ok">✓</span> Same shape as the last seven days. Sip coffee, move on.';
+    };
+    await draw(false);
+    const b=el('button','btn spikebtn'); b.textContent='Show me a spike day'; let sp=false;
+    b.onclick=async()=>{ if(busy) return; sp=!sp; b.disabled=true; await draw(sp); b.textContent=sp?'Back to a normal day':'Show me a spike day'; b.disabled=false; };
+    c.append(b);
+  }},
+ {title:"A new access point",at:510,old:60,fab:5,
+  say:()=>`A new AP is going into the ${P().apWhere}. The usual way means staging it on the bench before anyone can use it.`,
+  usual:["Unbox, console cable, set a management IP","Register it in the wireless controller","Copy the SSID and radio settings from another AP","Walk it over and hope it comes up"],
+  hook:"PUT /api/v2/cmdb/wireless-controller/wtp/<serial>\n  { \"admin\": \"enable\", \"wtp-profile\": \"231G-default\" }\n(pre-stage: AP plugged in, deauthorized)",
+  run:async c=>{
+    c.append(sec('Managed FortiAPs'));
+    const row=el('div','dev'); row.innerHTML=`<span class="k">FortiAP 231G · FP231GTF24001187</span><span class="v">ap-new · sw-idf-02 port 9</span><span class="pill p-warn" id="aps">waiting for authorization</span>`; c.append(row);
+    const L=log(c,'<span class="warn">!</span> new FortiAP detected · plugged in straight from the box');
+    await wait(800); addLog(L,'<span class="cmd">$</span> authorize ap-new'); const s=row.querySelector('#aps');
+    for(const [x,k,ms] of [["authorizing","p-warn",600],["downloading config","p-warn",900],["applying radio profile","p-warn",800],["online · broadcasting","p-ok",0]]){s.textContent=x;s.className='pill '+k;await wait(ms);}
+    addLog(L,'<span class="ok">✓</span> online · zero touches on the AP itself');
+  }},
+ {title:()=>"“They need their own network, today”",at:585,old:120,fab:10,
+  say:()=>`${P().segAsk} The usual way, one change means visiting every box it touches.`,
+  usual:["Create the VLAN and DHCP on the firewall","Write the firewall policy","Log into each switch and tag the ports","Create the SSID on the wireless controller","Test, find the switch you missed, fix it"],
+  hook:"POST /api/v2/cmdb/system/interface   (FortiLink VLAN)\nPOST /api/v2/cmdb/wireless-controller/vap\nPUT  /api/v2/cmdb/switch-controller/managed-switch/<sn>/ports",
+  run:async c=>{
+    const L=log(c,`<span class="cmd">$</span> create VLAN 140 "${P().vlan}" on FortiLink`); await wait(700);
+    addLog(L,'<span class="ok">✓</span> interface, DHCP and policy created');
+    c.append(sec('Propagation'));
+    const tb=el('div','tbl'); tb.innerHTML=`<table><thead><tr><th>Device</th><th>Change</th><th>Status</th></tr></thead><tbody id="pt"></tbody></table>`; c.append(tb);
+    const pt=tb.querySelector('#pt');
+    [["sw-core-01","trunk · VLAN 140"],["sw-idf-02","ports 13–24 · VLAN 140"],["sw-idf-03","ports 13–24 · VLAN 140"],["ap-101","SSID "+P().ssid],["ap-102","SSID "+P().ssid],["ap-201","SSID "+P().ssid],["ap-new","SSID "+P().ssid]].forEach(r=>pt.insertAdjacentHTML('beforeend',`<tr><td>${r[0]}</td><td>${r[1]}</td><td><span class="pill p-warn">pushing</span></td></tr>`));
+    for(const tr of pt.children){await wait(300); const p=tr.querySelector('.pill'); p.className='pill p-ok'; p.textContent='applied';}
+    addLog(L,'<span class="ok">✓</span> 7 devices updated from 1 change');
+  }},
+ {title:()=>"“The network is slow”",at:690,old:60,fab:10,
+  say:()=>`${P().caller}, ${P().callerRole}, calls. "The network is slow." Everyone in this room has taken that call. The usual way, finding one laptop means three consoles and a walk down the hall.`,
+  usual:["Ask for the IP, wait while they find it","Look up the MAC in DHCP","Search switch MAC tables one at a time","Walk to the closet to check the port"],
+  hook:"GET /api/v2/monitor/user/device/query?filter=user==<name>\nGET /api/v2/monitor/user/firewall\nFAZ JSON-RPC  /logview/adom/root/logsearch",
+  run:async c=>{
+    const s=el('div','search'); s.innerHTML=`<input id="q" aria-label="Search user or device"><button class="btn" disabled>Search</button>`; c.append(s);
+    const q=s.querySelector('#q'); const u=P().caller.toLowerCase().replace(' ','.'); for(const ch of u){q.value+=ch; await wait(60);} await wait(300);
+    c.append(sec('Result'));
+    const d=el('dl','kv'); d.innerHTML=`<dt>User</dt><dd>${P().caller} · ${P().callerRole} <span class="pill p-ok">FAC authenticated</span></dd><dt>Device</dt><dd>Windows 11 laptop · 3c:a6:f6:1e:92:0b</dd><dt>Location</dt><dd>sw-idf-02 · port 14</dd><dt>Policy</dt><dd>Staff-Internet · IPS + Web Filter</dd><dt>Last 24h</dt><dd>4.2 GB · 0 threats · port flap at 07:52</dd>`;
+    d.style.animation='pop .35s ease both'; c.append(d);
+    log(c,'<span class="warn">!</span> port 14 renegotiated at 100 Mbps after the flap · bad patch cable. Ticket closed from the desk.');
+  }},
+ {title:"The report for Monday",at:810,old:150,fab:5,
+  say:()=>`At 1:30, ${P().boss} ${P().bossAsk}. The usual way, that's an afternoon of exporting logs and building a spreadsheet.`,
+  usual:["Export logs from each device","Normalize them in Excel","Build charts by hand","Write the summary, second-guess the numbers"],
+  hook:"FAZ JSON-RPC  /report/adom/root/run   (template: Executive Summary)\nFAZ JSON-RPC  /report/adom/root/reports/data",
+  run:async c=>{
+    const L=log(c,'<span class="cmd">$</span> FortiAnalyzer · run "Executive Summary · 30 days"'); await wait(1100); addLog(L,'<span class="ok">✓</span> report ready · 14 pages');
+    const b=el('div','big'); b.innerHTML=`<div><b>1,284</b><span>threats blocked</span></div><div><b>0</b><span>infected hosts</span></div><div><b>99.98%</b><span>WAN uptime</span></div><div><b>212</b><span>risky sites blocked</span></div>`; c.append(b);
+    c.append(sec('Top applications · share of traffic')); const bars=el('div','bars'); c.append(bars);
+    for(const [n,v] of P().apps){bars.insertAdjacentHTML('beforeend',`<div class="bar"><span>${n}</span><i style="width:${v/41*100}%"></i><em>${v}%</em></div>`); await wait(110);}
+  }},
+ {title:"4:47 PM",at:1007,old:110,fab:5,
+  say:()=>`4:47. The call nobody wants. ${cap(P().crisisWho)} in ${P().crisisWhere} is throwing IPS alerts. The usual way, ${P().hero} gets in the truck.`,
+  usual:["Drive across town","Find the closet, find the key","Trace the cable, unplug the right port (hopefully)","Call the user, explain, start the cleanup"],
+  hook:"POST /api/v2/monitor/user/quarantine/add  { \"mac\": \"<mac>\" }\n(automation stitch: IPS event → quarantine)\nreset: POST /api/v2/monitor/user/quarantine/clear",
+  run:async c=>{
+    c.append(sec('IPS alert · 3c:a6:f6:52:11:7d'));
+    const d=el('div','dev'); d.innerHTML=`<span class="k">sw-idf-03 · port 6</span><span class="v">${cap(P().crisisWho)}</span><span class="pill p-bad" id="qs">IPS: C2 beacon detected</span>`; c.append(d);
+    const L=log(c,'<span class="cmd">$</span> quarantine 3c:a6:f6:52:11:7d'); const s=d.querySelector('#qs'); await wait(700);
+    s.className='pill p-warn'; s.textContent='moving to quarantine VLAN'; await wait(900);
+    s.className='pill p-bad'; s.textContent='QUARANTINED · VLAN 4093';
+    addLog(L,'<span class="ok">✓</span> port isolated from '+P().dept+' · nobody drove anywhere');
+    await wait(400); addLog(L,'<span class="ok">✓</span> logged in FortiAnalyzer · ready for Monday');
+  }},
+ {kind:"epilogue",title:"Two Fridays",time:"",
+  say:()=>`Same building, same people, same interruptions. One version of ${P().hero} made it to ${P().home}. The difference wasn't working harder. It was one fabric instead of five consoles. And notice the last scene: that click is the start of the next conversation.`,
+  run:async c=>{ drawDays(c); }}
+];
+
+
+const K='stroke="#131E29" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
+const ART=[
+ `<svg viewBox="0 0 120 100"><rect x="26" y="18" width="68" height="70" rx="8" fill="#fff" ${K}/><rect x="26" y="18" width="68" height="20" rx="8" fill="#DA291C" ${K}/><text x="60" y="34" text-anchor="middle" font-family="Fredoka,Arial" font-weight="700" font-size="14" fill="#fff">FRI</text><text x="60" y="74" text-anchor="middle" font-family="Fredoka,Arial" font-weight="700" font-size="30" fill="#131E29">27</text><ellipse cx="60" cy="64" rx="22" ry="17" fill="none" stroke="#DA291C" stroke-width="3" transform="rotate(-8 60 64)"/><line x1="40" y1="12" x2="40" y2="24" ${K}/><line x1="80" y1="12" x2="80" y2="24" ${K}/></svg>`,
+ `<svg viewBox="0 0 120 100"><path d="M30 44h44v30a14 14 0 0 1-14 14H44a14 14 0 0 1-14-14z" fill="#fff" ${K}/><path d="M74 52h6a9 9 0 0 1 0 18h-6" fill="none" ${K}/><rect x="36" y="56" width="32" height="10" rx="6" fill="#DA291C" stroke="#E9EEF0" stroke-width="2"/><path d="M42 36c-4-6 4-8 0-14M54 36c-4-6 4-8 0-14M66 36c-4-6 4-8 0-14" fill="none" stroke="#768692" stroke-width="3" stroke-linecap="round"/></svg>`,
+ `<svg viewBox="0 0 120 100"><path d="M22 46l38-16 38 16v34l-38 14-38-14z" fill="#E8C48A" ${K}/><path d="M22 46l38 14 38-14M60 60v34" fill="none" ${K}/><ellipse cx="60" cy="26" rx="22" ry="9" fill="#fff" ${K}/><circle cx="60" cy="26" r="3" fill="#00BF65"/><path d="M86 14q6 6 0 12M92 10q10 10 0 20" fill="none" stroke="#DA291C" stroke-width="3" stroke-linecap="round"/></svg>`,
+ `<svg viewBox="0 0 120 100"><rect x="44" y="12" width="32" height="20" rx="5" fill="#DA291C" ${K}/><rect x="10" y="66" width="28" height="18" rx="5" fill="#fff" ${K}/><rect x="46" y="66" width="28" height="18" rx="5" fill="#fff" ${K}/><rect x="82" y="66" width="28" height="18" rx="5" fill="#fff" ${K}/><path d="M60 32v16M24 66V50h72v16M60 48v18" fill="none" ${K}/><circle cx="24" cy="75" r="3" fill="#00BF65"/><circle cx="60" cy="75" r="3" fill="#00BF65"/><circle cx="96" cy="75" r="3" fill="#00BF65"/></svg>`,
+ `<svg viewBox="0 0 120 100"><path d="M38 30c0-8 8-10 12-4l6 10c3 5-4 9-2 14 4 9 10 15 19 19 5 2 9-5 14-2l10 6c6 4 4 12-4 12-30 0-55-25-55-55z" fill="#DA291C" ${K}/><path d="M80 18l6-8M90 28l9-4M70 14l1-9" fill="none" stroke="#131E29" stroke-width="3" stroke-linecap="round"/><text x="88" y="56" font-family="Fredoka,Arial" font-weight="700" font-size="18" fill="#131E29">?!</text></svg>`,
+ `<svg viewBox="0 0 120 100"><rect x="32" y="14" width="56" height="76" rx="6" fill="#fff" ${K}/><rect x="48" y="9" width="24" height="12" rx="4" fill="#768692" ${K}/><rect x="42" y="60" width="9" height="20" fill="#6AD1E3" ${K}/><rect x="56" y="46" width="9" height="34" fill="#DA291C" ${K}/><rect x="70" y="36" width="9" height="44" fill="#00BF65" ${K}/><line x1="40" y1="30" x2="76" y2="30" ${K}/></svg>`,
+ `<svg viewBox="0 0 120 100"><circle cx="60" cy="54" r="30" fill="#fff" ${K}/><circle cx="38" cy="26" r="10" fill="#DA291C" ${K}/><circle cx="82" cy="26" r="10" fill="#DA291C" ${K}/><path d="M60 54V36M60 54l12 6" fill="none" ${K}/><path d="M40 82l-6 8M80 82l6 8" ${K}/><path d="M14 46l-8-2M14 58l-9 3M106 46l8-2M106 58l9 3" stroke="#DA291C" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="54" r="3" fill="#131E29"/></svg>`,
+ `<svg viewBox="0 0 120 100"><circle cx="92" cy="22" r="10" fill="#FFD100" ${K}/><path d="M24 54l36-28 36 28" fill="#DA291C" ${K}/><rect x="32" y="52" width="56" height="38" fill="#fff" ${K}/><rect x="52" y="66" width="16" height="24" rx="2" fill="#768692" ${K}/><path d="M60 46c-4-5-11-1-7 4l7 6 7-6c4-5-3-9-7-4z" fill="#DA291C" stroke="#131E29" stroke-width="2"/></svg>`
+];
+function face(p){const gov=p==='gov';
+ return `<svg class="face" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47" fill="${gov?'#FFE1DD':'#D9F3F8'}" ${K}/>
+ ${gov?`<circle cx="50" cy="20" r="12" fill="#5A3A22" ${K}/>`:''}
+ <path d="M24 92c4-16 14-22 26-22s22 6 26 22" fill="#DA291C" ${K}/>
+ <circle cx="50" cy="48" r="22" fill="${gov?'#F2C7A5':'#A8714E'}" ${K}/>
+ ${gov?`<path d="M28 46c0-16 10-22 22-22s22 6 22 22c-6-6-16-8-22-12-6 4-16 6-22 12z" fill="#5A3A22" ${K}/>`
+     :`<path d="M29 42c2-12 10-17 21-17s19 5 21 17c-8-4-30-4-42 0z" fill="#1B1B1B" ${K}/><path d="M34 58c4 12 28 12 32 0" fill="none" stroke="#1B1B1B" stroke-width="6" stroke-linecap="round"/>`}
+ <circle cx="42" cy="50" r="2.6" fill="#131E29"/><circle cx="58" cy="50" r="2.6" fill="#131E29"/>
+ <path d="M43 59q7 5 14 0" fill="none" stroke="#131E29" stroke-width="2.5" stroke-linecap="round"/>
+ <path d="M30 44v6M70 44v6" stroke="#131E29" stroke-width="3" stroke-linecap="round"/><path d="M27 50a5 5 0 0 0 5 0M68 50a5 5 0 0 0 5 0" fill="none" stroke="#131E29" stroke-width="3"/></svg>`;}
+
+
+/* coffee report: 24 hourly points, a 7-day usual band, optional 2 AM spike */
+function rng(seed){return()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};}
+const day=h=>0.12+0.88*Math.max(0,Math.sin(Math.PI*(h-6)/13));
+const METRICS=[
+ {name:"Bandwidth",unit:"Gbps",total:"1.8 peak",shape:h=>day(h)*1.8,seed:3},
+ {name:"Sessions",unit:"k",total:"412k",shape:h=>day(h)*30+2,seed:7},
+ {name:"Threats blocked",unit:"",total:"46",shape:h=>1.2+day(h)*2.6,seed:11,spike:[2,38],spikeTotal:"131"},
+ {name:"Web filter blocks",unit:"",total:"318",shape:h=>2+day(h)*24,seed:13},
+ {name:"Failed VPN logins",unit:"",total:"9",shape:h=>0.2+day(h)*0.8,seed:17,spike:[2,64],spikeTotal:"402"},
+ {name:"Wi-Fi clients",unit:"",total:"286 peak",shape:h=>8+day(h)*270,seed:19}
+];
+function mini(mt,spike){
+  const r=rng(mt.seed), pts=[], lo=[], hi=[];
+  for(let h=0;h<24;h++){const base=mt.shape(h); lo.push(base*0.72); hi.push(base*1.28); let v=base*(0.86+r()*0.28); if(spike&&mt.spike&&Math.abs(h-mt.spike[0])<=1) v=h===mt.spike[0]?mt.spike[1]:mt.spike[1]*0.35; pts.push(v);}
+  const max=Math.max(...hi,...pts)*1.08, W=220,H=64, x=i=>4+i*(W-8)/23, y=v=>H-4-(v/max)*(H-10);
+  const band='M'+hi.map((v,i)=>`${x(i)},${y(v)}`).join('L')+'L'+lo.map((v,i)=>`${x(23-i)},${y(lo[23-i])}`).join('L')+'Z';
+  const line='M'+pts.map((v,i)=>`${x(i)},${y(v)}`).join('L');
+  const area=line+`L${x(23)},${H-4}L${x(0)},${H-4}Z`;
+  const hit=spike&&mt.spike;
+  const d=el('div','mini'+(hit?' hot':''));
+  d.innerHTML=`<div class="mini-h"><span>${mt.name}</span><b>${hit?mt.spikeTotal:mt.total}</b></div>
+   <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="${mt.name}, last 24 hours">
+    <path d="${band}" fill="rgba(106,209,227,.14)"/>
+    <path d="${area}" fill="${hit?'rgba(242,73,60,.18)':'rgba(106,209,227,.16)'}"/>
+    <path d="${line}" fill="none" stroke="${hit?'#F2493C':'#6AD1E3'}" stroke-width="2.2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    ${hit?`<circle cx="${x(mt.spike[0])}" cy="${y(mt.spike[1])}" r="4.5" fill="#F2493C" stroke="#fff" stroke-width="1.5"/>`:''}
+   </svg>
+   <div class="mini-f"><span>12a</span><span>6a</span><span>12p</span><span>6p</span></div>
+   <span class="pill ${hit?'p-bad':'p-ok'}">${hit?'spike · 2 AM':'looks like every day'}</span>`;
+  return d;
+}
+
+let idx=0; const ran=SCENES.map(()=>false);
+let oldMin={}; try{oldMin=JSON.parse(localStorage.getItem('friday-old')||'{}')}catch(e){}
+const $=id=>document.getElementById(id);
+function el(t,c){const e=document.createElement(t); if(c) e.className=c; return e;}
+function sec(t){const e=el('div','section-t'); e.textContent=t; return e;}
+function log(c,h){const e=el('div','log'); e.innerHTML=h; c.append(e); return e;}
+function addLog(L,h){L.insertAdjacentHTML('beforeend','<br>'+h);}
+const val=v=>typeof v==='function'?v():v;
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+const oldOf=i=>+(oldMin[i]??SCENES[i].old);
+function fmt(m){m=Math.round(m); let h=Math.floor(m/60), mm=m%60, ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(mm).padStart(2,'0')} ${ap}`;}
+
+/* run both days through the task list; a task starts when it lands or when the previous one finishes */
+function simulate(){
+  let o=465,f=465; const out=[];
+  SCENES.forEach((s,i)=>{ if(s.at==null) return;
+    const os=Math.max(o,s.at), fs=Math.max(f,s.at);
+    o=os+oldOf(i); f=fs+s.fab;
+    out[i]={at:s.at,os,oe:o,fs,fe:f,waited:os-s.at};});
+  return out;
+}
+
+function renderRail(){
+  $('rail').innerHTML='';
+  SCENES.forEach((s,i)=>{const b=el('button'); if(ran[i]) b.classList.add('done'); if(i===idx) b.setAttribute('aria-current','step');
+    b.innerHTML=`<b>${s.at!=null?fmt(s.at):(s.kind==='prologue'?'Open':'Close')}</b><span>${val(s.title)}</span>`; b.onclick=()=>go(i); $('rail').append(b);});
+}
+function updateClocks(){
+  const sim=simulate(); let last=-1; ran.forEach((r,i)=>{if(r&&sim[i]) last=i;});
+  if(ran[SCENES.length-1]) last=SCENES.length-2;
+  $('c-old').textContent=last<0?'7:45 AM':fmt(sim[last].oe);
+  $('c-new').textContent=last<0?'7:45 AM':fmt(sim[last].fe);
+}
+function render(){
+  const s=SCENES[idx], sim=simulate();
+  $('h1').innerHTML=P().day.replace('Friday','<em>Friday</em>');
+  $('s-time').textContent=s.at!=null?fmt(s.at):(s.kind==='prologue'?'7:40 AM':'End of day');
+  $('s-num').textContent=`Scene ${idx+1} of ${SCENES.length}`;
+  $('s-title').textContent=val(s.title); $('art').innerHTML=idx===0?face(profile):ART[idx]; $('art').classList.toggle('shake',idx===6); $('s-say').textContent=val(s.say);
+  const u=$('usual');
+  if(s.usual){ const r=sim[idx];
+    u.hidden=false;
+    u.innerHTML=`<div class="label">Meanwhile, the usual way…</div><ol>${s.usual.map(x=>`<li>${x}</li>`).join('')}</ol>
+     <div class="row"><span><label for="om">Minutes</label> <input id="om" inputmode="numeric" value="${oldOf(idx)}"> vs <b class="fabmin">${s.fab}</b> with the Fabric</span>
+     <span>${r.waited>0?`<span class="queued">Still busy: this waits ${r.waited} min</span>`:''}</span></div>`;
+    $('om').oninput=e=>{const v=e.target.value.replace(/\D/g,''); e.target.value=v; if(v===''){delete oldMin[idx]}else{oldMin[idx]=v} try{localStorage.setItem('friday-old',JSON.stringify(oldMin))}catch(_){} updateClocks(); const w=simulate()[idx].waited; u.querySelector('.row span:last-child').innerHTML=w>0?`<span class="queued">Still busy: this waits ${w} min</span>`:'';};
+  } else u.hidden=true;
+  $('hookwrap').hidden=!s.hook; $('s-hook').textContent=s.hook||'';
+  $('run').textContent=s.kind==='prologue'?'Show the day ahead':s.kind==='epilogue'?'Compare the two days':'Run it with the Fabric';
+  $('con-path').textContent=`fgt-core-01 · ${P().org}`;
+  $('prev').disabled=idx===0; $('next').disabled=idx===SCENES.length-1;
+  if(s.kind==='prologue'){ $('con').innerHTML=`<div class="persona">${face(profile)}<div><b>${P().hero}</b><div class="idle">${P().org}</div></div></div><p class="idle">Press the button to show ${P().hero}'s Friday.</p>`; }
+  else $('con').innerHTML=`<p class="idle">Lab is at baseline. Tell the usual-way story, then press <b>Run it with the Fabric</b>.</p>`;
+  $('run').disabled=false; renderRail(); updateClocks();
+}
+let busy=false;
+async function run(){
+  if(busy) return; busy=true; $('run').disabled=true; const c=$('con'); c.innerHTML='';
+  if(SCENES[idx].kind==='prologue') c.insertAdjacentHTML('beforeend',`<div class="persona">${face(profile)}<div><b>${P().hero}</b><div class="idle">${P().org}</div></div></div>`);
+  try{await SCENES[idx].run(c);}catch(e){log(c,'<span class="bad">✗</span> '+e.message);}
+  ran[idx]=true; busy=false; $('run').disabled=false; renderRail(); updateClocks();
+}
+
+function drawDays(c){
+  const sim=simulate().filter(Boolean), endOld=sim.at(-1).oe, endFab=sim.at(-1).fe;
+  const b=el('div','big'); b.innerHTML=`<div><b style="color:#F2493C">${fmt(endOld)}</b><span>${P().hero} leaves, the usual way</span></div><div><b style="color:#00BF65">${fmt(endFab)}</b><span>${P().hero} leaves, with the Fabric</span></div><div><b>${Math.round((endOld-endFab)/6)/10} h</b><span>given back on one Friday</span></div>`;
+  c.append(b);
+  const t0=420,t1=Math.max(1200,Math.ceil((endOld+30)/60)*60), W=640,L=120,R=16,H=150, x=m=>L+(m-t0)/(t1-t0)*(W-L-R);
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Timeline of both days">`;
+  for(let h=t0;h<=t1;h+=60){g+=`<line x1="${x(h)}" x2="${x(h)}" y1="18" y2="118" stroke="#2C3E4E"/><text x="${x(h)}" y="134" fill="#93A3AE" font-size="10" text-anchor="middle" font-family="Fredoka, Arial, sans-serif">${fmt(h).replace(':00','').replace(' ','')}</text>`;}
+  g+=`<text x="0" y="52" font-family="Fredoka, Arial, sans-serif" font-weight="700" fill="#E4EAEC" font-size="12">The usual way</text><text x="0" y="96" font-family="Fredoka, Arial, sans-serif" font-weight="700" fill="#E4EAEC" font-size="12">With the Fabric</text>`;
+  sim.forEach(s=>{g+=`<rect x="${x(s.os)}" y="38" width="${Math.max(2,x(s.oe)-x(s.os)-1)}" height="22" rx="6" fill="#DA291C" stroke="#E9EEF0" stroke-width="2"/>`;
+    if(s.waited>0) g+=`<rect x="${x(s.at)}" y="62" width="${x(s.os)-x(s.at)}" height="4" fill="#FFD100"/>`;
+    g+=`<rect x="${x(s.fs)}" y="82" width="${Math.max(2,x(s.fe)-x(s.fs)-1)}" height="22" rx="6" fill="#00BF65" stroke="#E9EEF0" stroke-width="2"/>`;});
+  g+=`<line x1="${x(1020)}" x2="${x(1020)}" y1="14" y2="118" stroke="#E4EAEC" stroke-dasharray="3 3"/><text x="${x(1020)+4}" y="13" fill="#E4EAEC" font-size="10" font-family="Fredoka, Arial, sans-serif">5 PM</text></svg>`;
+  const ch=el('div','chart'); ch.innerHTML=g; c.append(sec('Where the day went'),ch);
+  c.insertAdjacentHTML('beforeend',`<div class="legend"><span><b style="color:#F2493C">■</b> task, usual way</span><span><b style="color:#FFD100">▬</b> request waiting in the queue</span><span><b style="color:#00BF65">■</b> task, with the Fabric</span></div>`);
+  log(c,'Minutes are illustrative defaults. Swap in your customers\' real numbers on each scene and this chart redraws.');
+}
+
+function go(i){if(busy||i<0||i>=SCENES.length) return; idx=i; render();}
+function reset(){ if(busy) return; ran.fill(false); render(); const c=$('con'); c.innerHTML=''; const L=log(c,'<span class="cmd">$</span> reset to baseline');
+  ['deauthorize ap-new','delete VLAN 140 and SSID '+P().ssid,'clear quarantine 3c:a6:f6:52:11:7d','<span class="ok">✓</span> lab at baseline · ready for the next Friday'].forEach(x=>addLog(L,x));}
+function setProfile(p){profile=p; $('p-gov').setAttribute('aria-pressed',p==='gov'); $('p-edu').setAttribute('aria-pressed',p==='edu'); render();}
+$('run').onclick=run; $('prev').onclick=()=>go(idx-1); $('next').onclick=()=>go(idx+1); $('reset').onclick=reset;
+$('p-gov').onclick=()=>setProfile('gov'); $('p-edu').onclick=()=>setProfile('edu');
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT') return;
+  if(e.key==='ArrowRight') go(idx+1); else if(e.key==='ArrowLeft') go(idx-1);
+  else if(e.key===' '){e.preventDefault(); run();} else if(e.key.toLowerCase()==='r') reset();});
+render();
+fetch('/api/health').then(r=>r.json()).then(h=>{const t=document.getElementById('mode-tag'); if(h.mode==='live'){t.textContent='Live lab'; t.style.background='#00BF65';}}).catch(()=>{});
+</script>
+
+</body>
+</html>
