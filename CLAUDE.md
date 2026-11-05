@@ -55,7 +55,7 @@ tokens, then hidden rules (system prompt). The server pins the model and caps
 `max_tokens` at 1024. The tokenizer and embedding demos load from CDNs in the browser.
 See `ai-basics/README.md` for the run of show.
 
-**Two Circuits, One Bundle** (`static/sdwan/`, backend `app/sdwan.py`): SD-WAN with
+**Keep the Lights On** (`static/sdwan/`, backend `app/sdwan.py`): SD-WAN with
 broadband (WAN1, port2) and cellular (WAN2, port4) on the Fabric Studio fabric
 `Story-Fabric-SDWAN`. Live WAN health from the FortiGate's
 `/api/v2/monitor/virtual-wan/health-check`; scenes break and repair lab cables through the

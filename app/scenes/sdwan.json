@@ -1,5 +1,5 @@
 {
-  "title": "Two circuits, one bundle",
+  "title": "Keep the Lights On",
   "about": "Scenes for the Story-Fabric-SDWAN fabric. Cables are named 'Device:port' exactly as Fabric Studio shows them. Only cables listed here can ever be broken or repaired by story-runner.",
   "fabric": "Story-Fabric-SDWAN",
   "switch": "FSW_01",
