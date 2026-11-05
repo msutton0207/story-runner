@@ -133,6 +133,15 @@ async def status():
             if isinstance(check, dict):
                 for member, stats in check.items():
                     members.setdefault(member, stats)
+        cables = await live_cables()
+        broken = [
+            s["id"]
+            for s in story["scenes"]
+            if str(cables.get(s["cable"], {}).get("state", "")).lower() == "broken"
+        ]
+        # The health-check API doesn't say whether the port itself is down, so work it out:
+        # a broken "circuit" scene cable means the FortiGate's own WAN port lost carrier.
+        port_down = {s["member"] for s in story["scenes"] if s["id"] in broken and s["kind"] == "circuit"}
         links = []
         for link in story["links"]:
             st = members.get(link["member"], {})
@@ -141,19 +150,13 @@ async def status():
                 {
                     **link,
                     "alive": alive,
-                    "link_up": st.get("link") != "down" if st else None,
+                    "link_up": link["member"] not in port_down,
                     "latency": st.get("latency"),
                     "jitter": st.get("jitter"),
                     "loss": st.get("packet_loss"),
                     "raw_status": st.get("status"),
                 }
             )
-        cables = await live_cables()
-        broken = [
-            s["id"]
-            for s in story["scenes"]
-            if str(cables.get(s["cable"], {}).get("state", "")).lower() == "broken"
-        ]
         return {"source": "live", "at": time.time(), "links": links, "broken": broken}
     except HTTPException:
         raise
