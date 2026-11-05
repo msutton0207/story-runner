@@ -62,7 +62,7 @@ h2{font-size:17px;font-weight:700;margin:0}
 .seg .pin rect{fill:var(--bad)} .seg .pin text{fill:#fff;font-size:12px;font-weight:700}
 .tagbox rect{fill:var(--surface);stroke:var(--line)}
 .tagbox text{font-size:12.5px;font-weight:600}
-.tagbox .bad{fill:var(--bad)} .tagbox .good{fill:var(--ok)}
+.tagbox .bad{fill:var(--bad)} .tagbox .good{fill:var(--ok)} .tagbox .nodata{fill:var(--muted)}
 @keyframes flow{to{stroke-dashoffset:-18}}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
@@ -72,6 +72,8 @@ h2{font-size:17px;font-weight:700;margin:0}
 .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .link{border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
 .link.dead{border-left-color:var(--bad);background:var(--bad-soft)}
+.link.nodata{border-left-color:var(--idle);opacity:.6}
+.nodata .pill{background:var(--idle);color:#fff}
 .link-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .link h3{font-size:18px;font-weight:700;margin:0;line-height:1.2}
 .link h3 small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
@@ -400,8 +402,29 @@ async function poll(){
     $('#updated').textContent = (s.source === 'live' ? 'Live · updated ' : 'Updated ') + stamp();
   } catch(e){
     $('#status').className = 'status err'; $('#status-t').textContent = 'Lab not reachable';
-    $('#updated').innerHTML = `<span class="err">${e.message}</span>`;
+    $('#updated').innerHTML = `<span class="err">No live data: ${e.message}</span>`;
+    showNoData();
   }
+}
+
+// When the FortiGate stops answering (lab rebuilding, powered off), never leave the last
+// good numbers on screen: grey every link out and say there's no data.
+function showNoData(){
+  for (const k of Object.keys(prev)) delete prev[k];   // no "back in service" noise when it returns
+  userPath = null;
+  for (const l of story.links){
+    for (const kind of ['circuit','upstream']){
+      const g = document.getElementById(`seg-${l.member}-${kind}`); if (!g) continue;
+      g.classList.remove('ok','cut','path','quiet'); g.classList.add('idle');
+    }
+    const you = document.getElementById(`you-${l.member}`); if (you) you.classList.remove('on');
+    const tag = document.getElementById(`tag-${l.member}`);
+    if (tag){ tag.textContent = 'No data'; tag.setAttribute('class', 'nodata'); }
+  }
+  $('#links').innerHTML = story.links.map(l => `<article class="link nodata">
+      <div class="link-top"><h3>${l.label} · ${l.nick}<small>FortiGate ${l.member}</small></h3><span class="pill">No data</span></div>
+      <div class="note">The FortiGate isn't answering, so there are no live numbers to show.</div>
+    </article>`).join('');
 }
 
 $('#scenes').addEventListener('click', async e => {
