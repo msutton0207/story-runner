@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two Circuits, One Bundle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* SD-WAN demo. Top: the two circuits, live. Middle: scenes the presenter triggers. Bottom: what happened, with timings. */
+:root{
+  --red:#DA291C; --ink:#131E29; --cap:#FFD100; --ok:#00BF65; --warn:#FF8A00;
+  --bg:#FFF8EC; --dots:rgba(19,30,41,.07); --surface:#FFFFFF; --line:#131E29; --fg:#131E29; --muted:#4F5F6C; --shadow:#131E29; --tint:#FFE1DD; --tint2:#D9F3F8; --okt:#D8F5E6;
+  --f-head:"Fredoka","Arial Rounded MT Bold","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Nunito","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141B24;--dots:rgba(255,255,255,.05);--surface:#1E2A37;--line:#E9EEF0;--fg:#F2F5F6;--muted:#B4C0C8;--shadow:#000;--tint:#40201E;--tint2:#173843;--okt:#143826;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141B24;--dots:rgba(255,255,255,.05);--surface:#1E2A37;--line:#E9EEF0;--fg:#F2F5F6;--muted:#B4C0C8;--shadow:#000;--tint:#40201E;--tint2:#173843;--okt:#143826;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(var(--dots) 1.4px,transparent 1.6px);background-size:18px 18px;color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+a{color:inherit}
+.back{font-weight:800;font-size:14px;text-decoration:none}
+header{background:var(--ink);color:#fff;border:3px solid var(--line);box-shadow:6px 6px 0 var(--red);border-radius:18px;padding:22px 24px;display:grid;gap:8px}
+.tag{justify-self:start;font-family:var(--f-head);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;background:var(--cap);color:var(--ink);border:2px solid var(--ink);padding:2px 10px;border-radius:6px;transform:rotate(-2deg)}
+h1{font-family:var(--f-head);font-weight:700;font-size:clamp(30px,4.5vw,48px);line-height:1;margin:4px 0 0}
+header p{margin:0;max-width:62ch;color:#C3CED4;font-weight:700}
+.status{justify-self:start;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:3px 12px}
+.status i{width:9px;height:9px;border-radius:50%;background:#9CABB5}
+.status.live i{background:var(--ok)} .status.sim i{background:var(--cap)} .status.err i{background:var(--red)}
+.sim-banner{display:none;background:var(--cap);color:var(--ink);border:3px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:800}
+.sim-banner.on{display:block}
+h2{font-family:var(--f-head);font-weight:700;font-size:24px;margin:0}
+.panel{background:var(--surface);border:3px solid var(--line);border-radius:16px;box-shadow:6px 6px 0 var(--shadow);padding:16px 18px;display:grid;gap:12px}
+/* links */
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.link{border:3px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:8px;background:var(--okt);transition:background .25s}
+.link.dead{background:var(--tint)}
+.link-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.link h3{font-family:var(--f-head);font-weight:700;font-size:22px;margin:0;line-height:1.1}
+.link h3 small{display:block;font-family:var(--f-body);font-size:13px;color:var(--muted);font-weight:800}
+.pill{font-family:var(--f-head);font-weight:700;font-size:15px;border:2px solid var(--ink);border-radius:999px;padding:2px 12px;background:var(--ok);color:var(--ink);white-space:nowrap}
+.dead .pill{background:var(--red);color:#fff}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.num{background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:6px 8px}
+.num b{display:block;font-family:var(--f-head);font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+.num span{font-size:12px;font-weight:800;color:var(--muted)}
+.spark{width:100%;height:46px;display:block}
+.note{font-size:13px;font-weight:800;color:var(--muted);min-height:1.5em}
+/* scenes */
+.scenes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.scene{border:3px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:8px;align-content:start;background:var(--surface)}
+.scene.on{background:var(--tint)}
+.scene h3{font-family:var(--f-head);font-weight:700;font-size:18px;margin:0;line-height:1.15}
+.scene p{margin:0;font-size:14px;color:var(--muted);font-weight:700}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:800;border:2px solid var(--line);border-radius:8px;padding:0 8px}
+.chip.circuit{background:var(--tint2)} .chip.upstream{background:var(--cap);color:var(--ink)}
+button{font-family:var(--f-head);font-weight:700;font-size:16px;border:3px solid var(--ink);border-radius:12px;padding:8px 14px;cursor:pointer;box-shadow:4px 4px 0 var(--ink);transition:transform .08s,box-shadow .08s;min-height:44px}
+button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+button:disabled{opacity:.5;cursor:wait}
+button:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+.btn-break{background:var(--red);color:#fff}
+.btn-fix{background:var(--ok);color:var(--ink)}
+.btn-reset{background:var(--cap);color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+/* log */
+ol.log{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:320px;overflow:auto}
+.log li{display:grid;grid-template-columns:70px 1fr;gap:10px;font-weight:700;font-size:14px;border-bottom:1px dashed var(--muted);padding-bottom:4px}
+.log time{font-variant-numeric:tabular-nums;color:var(--muted)}
+.log .bad{color:var(--red)} .log .good{color:var(--ok)}
+.log .act{font-family:var(--f-head)}
+.err{color:var(--red);font-weight:800}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Demo Lab</a>
+  <header>
+    <span class="tag">SD-WAN · live lab</span>
+    <h1 id="title">Two circuits, one bundle</h1>
+    <p>Broadband and cellular, bundled by the FortiGate. Break things for real and watch SD-WAN keep the users online.</p>
+    <span class="status" id="status"><i></i><span id="status-t">Checking the lab…</span></span>
+  </header>
+
+  <div class="sim-banner" id="sim">Simulated: built-in data, nothing in the lab is changing. Set SIM_MODE=false and add the lab credentials to go live.</div>
+
+  <section class="panel" aria-labelledby="h-links">
+    <div class="row"><h2 id="h-links">The circuits</h2><span class="note" id="updated"></span></div>
+    <div class="links" id="links"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-scenes">
+    <div class="row">
+      <h2 id="h-scenes">Break something</h2>
+      <button class="btn-reset" id="reset">Repair everything</button>
+    </div>
+    <div class="scenes" id="scenes"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-log">
+    <h2 id="h-log">What just happened</h2>
+    <ol class="log" id="log"></ol>
+  </section>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const story = {links: [], scenes: []};
+const hist = {};          // member -> recent latency values for the sparkline
+const prev = {};          // member -> last alive state
+const pending = {};       // member -> {t, title} when a break was pressed, to time detection
+let lastBroken = [];
+
+function stamp(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}); }
+function log(html, cls=''){
+  const li = document.createElement('li');
+  li.innerHTML = `<time>${stamp()}</time><span class="${cls}">${html}</span>`;
+  $('#log').prepend(li);
+}
+function fmt(v, unit){ return (v === null || v === undefined || v === '') ? '—' : `${Number(v).toFixed(unit==='%'?1:1)}${unit}`; }
+
+function spark(member){
+  const h = hist[member] || [];
+  if (!h.length) return '';
+  const max = Math.max(20, ...h.filter(v=>v!=null));
+  const pts = h.map((v,i)=>`${(i/(Math.max(h.length-1,1)))*100},${v==null?40:38-(v/max)*34}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+function drawLinks(links){
+  $('#links').innerHTML = links.map(l => {
+    const dead = !l.alive;
+    const why = dead ? (l.link_up === false ? 'Port is down: the FortiGate saw the cable go.' : 'Port is up, but probes past the ISP are failing.') : 'Probes to the internet are answering.';
+    return `<article class="link ${dead?'dead':''}">
+      <div class="link-top"><h3>${l.label}<small>${l.nick} · ${l.member}</small></h3><span class="pill">${dead?'Out of service':'In service'}</span></div>
+      <div class="nums">
+        <div class="num"><b>${fmt(l.latency,' ms')}</b><span>Latency</span></div>
+        <div class="num"><b>${fmt(l.jitter,' ms')}</b><span>Jitter</span></div>
+        <div class="num"><b>${fmt(l.loss,'%')}</b><span>Loss</span></div>
+      </div>
+      ${spark(l.member)}
+      <div class="note">${why}</div>
+    </article>`;
+  }).join('');
+}
+
+function drawScenes(broken){
+  $('#scenes').innerHTML = story.scenes.map(s => {
+    const on = broken.includes(s.id);
+    const link = story.links.find(l => l.member === s.member) || {};
+    return `<article class="scene ${on?'on':''}">
+      <div class="chips"><span class="chip ${s.kind}">${s.kind==='circuit'?'Circuit cut':'Upstream outage'}</span><span class="chip">${link.label||s.member}</span></div>
+      <h3>${s.title}</h3>
+      <p>${s.blurb}</p>
+      ${on ? `<button class="btn-fix" data-id="${s.id}" data-act="repair">Fix it</button>`
+           : `<button class="btn-break" data-id="${s.id}" data-act="break">Break it</button>`}
+    </article>`;
+  }).join('');
+}
+
+async function api(path, opts){
+  const r = await fetch(path, opts);
+  const body = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(body.detail || body.error || `HTTP ${r.status}`);
+  return body;
+}
+
+async function poll(){
+  try {
+    const s = await api('/api/sdwan/status');
+    const st = $('#status'), t = $('#status-t');
+    st.className = 'status ' + (s.source === 'live' ? 'live' : 'sim');
+    t.textContent = s.source === 'live' ? 'Connected to the lab' : 'Simulated mode';
+    $('#sim').classList.toggle('on', s.source !== 'live');
+    for (const l of s.links){
+      (hist[l.member] ||= []).push(l.alive ? l.latency : null);
+      if (hist[l.member].length > 60) hist[l.member].shift();
+      if (prev[l.member] !== undefined && prev[l.member] !== l.alive){
+        const p = pending[l.member];
+        const secs = p ? ` · ${((Date.now()-p.t)/1000).toFixed(1)} s after “${p.title}”` : '';
+        log(l.alive ? `${l.label} (${l.nick}) back in service${secs}` : `${l.label} (${l.nick}) taken out of service${secs}`, l.alive ? 'good' : 'bad');
+        delete pending[l.member];
+      }
+      prev[l.member] = l.alive;
+    }
+    drawLinks(s.links);
+    if (JSON.stringify(s.broken) !== JSON.stringify(lastBroken)){ lastBroken = s.broken; drawScenes(lastBroken); }
+    $('#updated').textContent = 'Updated ' + stamp();
+  } catch(e){
+    $('#status').className = 'status err'; $('#status-t').textContent = 'Lab not reachable';
+    $('#updated').innerHTML = `<span class="err">${e.message}</span>`;
+  }
+}
+
+$('#scenes').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-id]'); if (!b) return;
+  const s = story.scenes.find(x => x.id === b.dataset.id); const act = b.dataset.act;
+  b.disabled = true;
+  try {
+    await api(`/api/sdwan/scene/${s.id}/${act}`, {method:'POST'});
+    pending[s.member] = {t: Date.now(), title: s.title};
+    log(act === 'break' ? `Pressed: ${s.title}` : `Fixed: ${s.title}`, 'act');
+    lastBroken = act === 'break' ? [...lastBroken, s.id] : lastBroken.filter(x => x !== s.id);
+    drawScenes(lastBroken);
+  } catch(err){ log(`Couldn't ${act} “${s.title}”: ${err.message}`, 'bad'); b.disabled = false; }
+});
+
+$('#reset').addEventListener('click', async e => {
+  const b = e.currentTarget; b.disabled = true;
+  try {
+    const r = await api('/api/sdwan/reset', {method:'POST'});
+    log(r.ok ? 'Repaired every scene cable' : `Repair finished with problems: ${(r.errors||[]).join('; ')}`, r.ok ? 'good' : 'bad');
+    lastBroken = []; drawScenes(lastBroken);
+  } catch(err){ log(`Repair everything failed: ${err.message}`, 'bad'); }
+  b.disabled = false;
+});
+
+(async () => {
+  try {
+    const st = await api('/api/sdwan/story');
+    story.links = st.links; story.scenes = st.scenes;
+    $('#title').textContent = st.title;
+    drawScenes([]);
+  } catch(e){ log(`Couldn't load the scenes: ${e.message}`, 'bad'); }
+  poll(); setInterval(poll, 1000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "title": "Two circuits, one bundle",
+  "about": "Scenes for the Story-FGT-SDWAN fabric. Cables are named 'Device:port' exactly as Fabric Studio shows them. Only cables listed here can ever be broken or repaired by story-runner.",
+  "links": [
+    {
+      "member": "port2",
+      "label": "WAN1",
+      "nick": "Broadband"
+    },
+    {
+      "member": "port4",
+      "label": "WAN2",
+      "nick": "Cellular"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "cut-wan1",
+      "title": "Cut the broadband circuit",
+      "blurb": "Someone backs a truck into the demarc. The FortiGate's WAN1 port goes dark.",
+      "cable": "FortiGate:port2",
+      "member": "port2",
+      "kind": "circuit"
+    },
+    {
+      "id": "cut-wan2",
+      "title": "Cut the cellular circuit",
+      "blurb": "The cellular modem dies. WAN2's port goes dark.",
+      "cable": "FortiGate:port4",
+      "member": "port4",
+      "kind": "circuit"
+    },
+    {
+      "id": "isp1-upstream",
+      "title": "Broadband ISP upstream outage",
+      "blurb": "The cable is fine and the modem lights are green, but the ISP's core is down. Only the SLA probes notice.",
+      "cable": "ISP Router_1:port2",
+      "member": "port2",
+      "kind": "upstream"
+    },
+    {
+      "id": "isp2-upstream",
+      "title": "Cellular carrier outage",
+      "blurb": "The carrier's core drops. WAN2 stays up locally but goes nowhere.",
+      "cable": "ISP Router_2:port2",
+      "member": "port4",
+      "kind": "upstream"
+    }
+  ]
+}

@@ -6,32 +6,17 @@ API tokens live only here (in .env), never in the browser.
 SIM_MODE=true  -> every endpoint returns built-in demo data (no lab needed)
 SIM_MODE=false -> endpoints call the real FortiGate using the token in .env
 """
-import os
 from pathlib import Path
 
-import httpx
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-SIM_MODE = os.getenv("SIM_MODE", "true").lower() == "true"
-FGT_HOST = os.getenv("FGT_HOST", "").strip()
-FGT_TOKEN = os.getenv("FGT_TOKEN", "").strip()
-# Lab FortiGates usually have self-signed certs, so verification is off unless you turn it on.
-FGT_VERIFY_TLS = os.getenv("FGT_VERIFY_TLS", "false").lower() == "true"
+from . import sdwan
+from .lab import FGT_HOST, FGT_TOKEN, SIM_MODE, fgt_get
 
 app = FastAPI(title="Story Runner", docs_url=None, redoc_url=None)
-
-
-async def fgt_get(path: str):
-    """Read-only GET against the FortiGate REST API."""
-    async with httpx.AsyncClient(verify=FGT_VERIFY_TLS, timeout=8) as client:
-        r = await client.get(
-            f"https://{FGT_HOST}{path}",
-            headers={"Authorization": f"Bearer {FGT_TOKEN}"},
-        )
-        r.raise_for_status()
-        return r.json()
+app.include_router(sdwan.router)
 
 
 @app.get("/api/health")

@@ -55,6 +55,15 @@ tokens, then hidden rules (system prompt). The server pins the model and caps
 `max_tokens` at 1024. The tokenizer and embedding demos load from CDNs in the browser.
 See `ai-basics/README.md` for the run of show.
 
+**Two Circuits, One Bundle** (`static/sdwan/`, backend `app/sdwan.py`): SD-WAN with
+broadband (WAN1, port2) and cellular (WAN2, port4) on the Fabric Studio fabric
+`Story-FGT-SDWAN`. Live WAN health from the FortiGate's
+`/api/v2/monitor/virtual-wan/health-check`; scenes break and repair lab cables through the
+Fabric Studio API (`/api/v1/runtime/cable/{id}:break` / `:repair`, OAuth2 client
+credentials in `FS_CREDENTIAL`). Scenes live in `app/scenes/sdwan.json` and name cables as
+`Device:port`; only those cables can be touched, and "Repair everything" resets them all.
+`GET /api/sdwan/cables` lists every running cable by name for checking the scene file.
+
 ## Adding a demo
 
 1. Put it in its own folder under `static/` (or its own container for a separate server).
