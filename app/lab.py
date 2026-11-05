@@ -38,6 +38,8 @@ async def fgt_get(path: str):
 FS_HOST = os.getenv("FS_HOST", "").strip()
 FS_CREDENTIAL = os.getenv("FS_CREDENTIAL", "").strip()
 FS_VERIFY_TLS = os.getenv("FS_VERIFY_TLS", "false").lower() == "true"
+# The Fabric Studio API call that installs a fabric ({id} = fabric id). Check it in Swagger.
+FS_FABRIC_INSTALL_PATH = os.getenv("FS_FABRIC_INSTALL_PATH", "/api/v1/runtime/fabric/{id}").strip()
 
 _fs_token = {"value": "", "expires": 0.0}
 
@@ -60,12 +62,12 @@ async def _fs_new_token(client: httpx.AsyncClient) -> str:
     return _fs_token["value"]
 
 
-async def fs_call(method: str, path: str, params=None):
+async def fs_call(method: str, path: str, params=None, timeout: float = 15, json=None):
     """Call the Fabric Studio API with a bearer token (no cookies, no CSRF needed).
 
     Gets a token on first use, and once more if the server says the token is no good.
     """
-    async with httpx.AsyncClient(verify=FS_VERIFY_TLS, timeout=15) as client:
+    async with httpx.AsyncClient(verify=FS_VERIFY_TLS, timeout=timeout) as client:
         for attempt in (1, 2):
             token = _fs_token["value"]
             if not token or time.time() > _fs_token["expires"] or attempt == 2:
@@ -74,6 +76,7 @@ async def fs_call(method: str, path: str, params=None):
                 method,
                 f"https://{FS_HOST}{path}",
                 params=params,
+                json=json,
                 headers={"Authorization": f"Bearer {token}"},
             )
             if r.status_code in (401, 403) and attempt == 1:

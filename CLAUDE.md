@@ -57,7 +57,7 @@ See `ai-basics/README.md` for the run of show.
 
 **Two Circuits, One Bundle** (`static/sdwan/`, backend `app/sdwan.py`): SD-WAN with
 broadband (WAN1, port2) and cellular (WAN2, port4) on the Fabric Studio fabric
-`Story-FGT-SDWAN`. Live WAN health from the FortiGate's
+`Story-Fabric-SDWAN`. Live WAN health from the FortiGate's
 `/api/v2/monitor/virtual-wan/health-check`; scenes break and repair lab cables through the
 Fabric Studio API (`/api/v1/runtime/cable/{id}:break` / `:repair`, OAuth2 client
 credentials in `FS_CREDENTIAL`). Scenes live in `app/scenes/sdwan.json` and name cables as
@@ -66,6 +66,15 @@ credentials in `FS_CREDENTIAL`). Scenes live in `app/scenes/sdwan.json` and name
 This demo deliberately uses a clean, flat style (Inter, blue header, white cards) instead of
 the comic look, with a live network map: green animated = in service, grey = taken out by
 SD-WAN, red dashed with an X = cable cut.
+Also on the page:
+- "Get the lab ready" strip: `GET /api/sdwan/lab` checks the fabric's scene cables exist, the
+  FortiGate answers, a FortiSwitch is online and Corp_User answers SSH. The Install / Reset
+  button (two-click confirm) calls `POST /api/v1/runtime/fabric/{id}` (`FS_FABRIC_INSTALL_PATH`),
+  which uninstalls whatever fabric is running and boots every device from its snapshot.
+- "What the user sees": story-runner SSHes to Corp_User (`CORP_SSH_*` in .env, asyncssh) and
+  runs only two fixed commands: `ping` (streamed to the page as server-sent events, with lost
+  replies counted) and a 2-hop `traceroute`, whose second hop (the ISP router's gateway in
+  `links[].gateway`) shows which WAN the users' traffic is really on. The map highlights it.
 
 ## Adding a demo
 
@@ -82,7 +91,6 @@ SD-WAN, red dashed with an X = cable cut.
 
 ## Open to-dos
 
-- Read-only REST API admin on the FortiGate; token into `.env`; set `SIM_MODE=false`.
 - Wire Two Fridays stop 1 to real FortiAnalyzer report data, and confirm the FAZ
   template name ("Daily Summary").
 - Check `/api/fabric/status` field names against a real FortiGate response.

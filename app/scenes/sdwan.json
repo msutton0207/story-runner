@@ -1,16 +1,20 @@
 {
   "title": "Two circuits, one bundle",
-  "about": "Scenes for the Story-FGT-SDWAN fabric. Cables are named 'Device:port' exactly as Fabric Studio shows them. Only cables listed here can ever be broken or repaired by story-runner.",
+  "about": "Scenes for the Story-Fabric-SDWAN fabric. Cables are named 'Device:port' exactly as Fabric Studio shows them. Only cables listed here can ever be broken or repaired by story-runner.",
+  "fabric": "Story-Fabric-SDWAN",
+  "switch": "FSW_01",
   "links": [
     {
       "member": "port2",
       "label": "WAN1",
-      "nick": "Broadband"
+      "nick": "Broadband",
+      "gateway": "203.0.113.254"
     },
     {
       "member": "port4",
       "label": "WAN2",
-      "nick": "Cellular"
+      "nick": "Cellular",
+      "gateway": "192.0.2.254"
     }
   ],
   "scenes": [

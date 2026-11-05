@@ -111,6 +111,37 @@ ol.log{list-style:none;margin:0;padding:0;display:grid;max-height:300px;overflow
 .log .bad{color:var(--bad);font-weight:600} .log .good{color:var(--ok);font-weight:600} .log .act{font-weight:600}
 .empty{color:var(--muted);font-size:14px}
 .err{color:var(--bad);font-weight:600}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-warn{background:var(--bad);color:#fff}
+
+/* ---- lab readiness strip ---- */
+.lab{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.lab-l{display:grid;gap:8px}
+.lab-title{font-weight:700;font-size:15px}
+.checks{display:flex;gap:8px;flex-wrap:wrap}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface)}
+.chk i{width:8px;height:8px;border-radius:50%;background:var(--idle)}
+.chk.ok i{background:var(--ok)} .chk.no i{background:var(--bad)} .chk.wait i{background:#E8A400;animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.3}}
+.lab-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lab-msg{font-size:13px;color:var(--muted);max-width:46ch}
+
+/* ---- user's view ---- */
+.uv{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px}
+@media (max-width:760px){.uv{grid-template-columns:1fr}}
+.term{background:#0B1220;color:#C9D4E3;border-radius:10px;padding:10px 12px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.term .r{color:#C9D4E3} .term .l{color:#FF7B72;font-weight:700} .term .s{color:#E8A400} .term .i{color:#7EA6E8}
+.uv-side{display:grid;gap:10px;align-content:start}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat .num b{font-size:22px}
+.lostbig b{color:var(--bad)}
+.pathbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px}
+.pathbox b{font-size:16px}
+.pathbox span{font-size:12.5px;color:var(--muted)}
+.seg.path .base{stroke-width:8}
+.seg.ok.quiet .flow{opacity:0}
+.youare{opacity:0;transition:opacity .3s} .youare.on{opacity:1}
+.youare rect{fill:var(--brand)} .youare text{fill:#fff;font-size:12.5px;font-weight:700}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -128,6 +159,17 @@ ol.log{list-style:none;margin:0;padding:0;display:grid;max-height:300px;overflow
   </header>
 
   <div class="sim-banner" id="sim">Simulated: built-in data, nothing in the lab is changing. Set SIM_MODE=false and add the lab credentials to go live.</div>
+
+  <section class="card lab" aria-label="Lab readiness">
+    <div class="lab-l">
+      <span class="lab-title" id="lab-title">Checking the lab…</span>
+      <div class="checks" id="checks"></div>
+    </div>
+    <div class="lab-r">
+      <span class="lab-msg" id="lab-msg"></span>
+      <button class="btn-primary" id="install" hidden>Install the SD-WAN lab</button>
+    </div>
+  </section>
 
   <section class="card" aria-labelledby="h-map">
     <div class="card-h"><h2 id="h-map">The network</h2><span class="sub" id="updated"></span></div>
@@ -189,6 +231,10 @@ ol.log{list-style:none;margin:0;padding:0;display:grid;max-height:300px;overflow
         <text class="lbl" y="7" text-anchor="middle">Internet</text>
       </g>
 
+      <!-- where Corp_User's traffic actually goes (from traceroute) -->
+      <g class="youare" id="you-port2" transform="translate(712 40)"><rect width="116" height="24" rx="12"/><text x="58" y="16.5" text-anchor="middle">Users' traffic</text></g>
+      <g class="youare" id="you-port4" transform="translate(690 330)"><rect width="116" height="24" rx="12"/><text x="58" y="16.5" text-anchor="middle">Users' traffic</text></g>
+
       <!-- live labels on each WAN (filled by script) -->
       <g class="tagbox" transform="translate(455 60)"><rect width="120" height="44" rx="8"/><text x="10" y="18">WAN1 · port2</text><text x="10" y="35" id="tag-port2">—</text></g>
       <g class="tagbox" transform="translate(455 300)"><rect width="120" height="44" rx="8"/><text x="10" y="18">WAN2 · port4</text><text x="10" y="35" id="tag-port4">—</text></g>
@@ -200,9 +246,29 @@ ol.log{list-style:none;margin:0;padding:0;display:grid;max-height:300px;overflow
     </div>
   </section>
 
-  <section class="card" aria-labelledby="h-links">
-    <div class="card-h"><h2 id="h-links">The circuits</h2><span class="sub">Measured by the FortiGate's health probes</span></div>
-    <div class="links" id="links"></div>
+  <section class="card" aria-labelledby="h-uv">
+    <div class="card-h">
+      <h2 id="h-uv">What the user sees</h2>
+      <div class="lab-r"><span class="sub">Corp_User, pinging the internet</span><button class="btn-primary" id="ping-btn">Start ping</button></div>
+    </div>
+    <div class="uv">
+      <div class="term" id="term" aria-live="off"><span class="i">Press “Start ping” to watch Corp_User ping the internet live.</span>
+</div>
+      <div class="uv-side">
+        <div class="stat">
+          <div class="num"><b id="st-sent">0</b><span>Sent</span></div>
+          <div class="num"><b id="st-recv">0</b><span>Answered</span></div>
+          <div class="num lostbig"><b id="st-lost">0</b><span>Lost</span></div>
+          <div class="num"><b id="st-last">—</b><span>Last outage</span></div>
+        </div>
+        <div class="pathbox">
+          <span>Users' traffic is going out</span>
+          <b id="path-t">Unknown</b>
+          <span id="path-d">Checked with a traceroute from Corp_User</span>
+        </div>
+        <button class="btn-reset" id="path-btn">Check the path now</button>
+      </div>
+    </div>
   </section>
 
   <section class="card" aria-labelledby="h-scenes">
@@ -211,6 +277,11 @@ ol.log{list-style:none;margin:0;padding:0;display:grid;max-height:300px;overflow
       <button class="btn-reset" id="reset">Repair everything</button>
     </div>
     <div class="scenes" id="scenes"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-links">
+    <div class="card-h"><h2 id="h-links">The circuits</h2><span class="sub">Measured by the FortiGate's health probes</span></div>
+    <div class="links" id="links"></div>
   </section>
 
   <section class="card" aria-labelledby="h-log">
@@ -226,6 +297,8 @@ const hist = {};          // member -> recent latency values for the sparkline
 const prev = {};          // member -> last alive state
 const pending = {};       // member -> {t, title} when a break was pressed, to time detection
 let lastBroken = [];
+let userPath = null;       // which WAN member Corp_User's traffic is on (from traceroute)
+let labReady = false;
 
 function stamp(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}); }
 function log(html, cls=''){
@@ -250,9 +323,13 @@ function drawMap(links, broken){
   for (const l of links){
     for (const kind of ['circuit','upstream']){
       const g = document.getElementById(`seg-${l.member}-${kind}`); if (!g) continue;
-      g.classList.remove('ok','idle','cut');
+      g.classList.remove('ok','idle','cut','path','quiet');
       g.classList.add(cut.has(`${l.member}-${kind}`) ? 'cut' : (l.alive ? 'ok' : 'idle'));
+      // Once we know where the users' traffic is, only that path gets the moving dots.
+      if (userPath){ g.classList.add(userPath === l.member ? 'path' : 'quiet'); }
     }
+    const you = document.getElementById(`you-${l.member}`);
+    if (you) you.classList.toggle('on', userPath === l.member);
     const tag = document.getElementById(`tag-${l.member}`);
     if (tag){
       tag.textContent = l.alive ? `${fmt(l.latency,' ms')} · ${fmt(l.loss,'%')} loss` : 'Out of service';
@@ -350,7 +427,119 @@ $('#reset').addEventListener('click', async e => {
   b.disabled = false;
 });
 
+// ---------- Getting the lab ready ----------
+let installArmed = false, installing = false;
+async function pollLab(){
+  try {
+    const L = await api('/api/sdwan/lab');
+    const wasInstalling = installing;
+    labReady = L.ready; installing = L.installing || (installing && !L.ready);
+    $('#checks').innerHTML = L.checks.map(c => `<span class="chk ${c.ok?'ok':(installing?'wait':'no')}" title="${c.detail||''}"><i></i>${c.label}</span>`).join('');
+    const others = (L.installed_fabrics||[]).filter(n => n !== L.fabric);
+    const btn = $('#install');
+    if (L.ready){
+      $('#lab-title').textContent = 'Lab ready';
+      $('#lab-msg').textContent = `${L.fabric} is up. Reinstalling resets every device to its saved baseline.`;
+      btn.hidden = false; if (!installArmed) btn.textContent = 'Reset the lab';
+      if (wasInstalling){ installing = false; log('Lab is ready', 'good'); }
+    } else if (installing){
+      $('#lab-title').textContent = 'Installing the lab…';
+      $('#lab-msg').textContent = 'Devices boot from their snapshots. This takes a few minutes; the checks turn green as each piece comes up.';
+      btn.hidden = true;
+    } else {
+      $('#lab-title').textContent = 'Lab not ready';
+      $('#lab-msg').textContent = others.length ? `Running now: ${others.join(', ')}. Installing ${L.fabric} will stop it.` : `Install ${L.fabric} to start.`;
+      btn.hidden = false; if (!installArmed) btn.textContent = 'Install the SD-WAN lab';
+    }
+  } catch(e){
+    $('#lab-title').textContent = 'Can’t check the lab';
+    $('#lab-msg').innerHTML = `<span class="err">${e.message}</span>`;
+  }
+  setTimeout(pollLab, labReady && !installing ? 15000 : 3000);
+}
+$('#install').addEventListener('click', async e => {
+  const b = e.currentTarget;
+  if (!installArmed){   // two-step: first click asks, second click does it
+    installArmed = true; b.className = 'btn-warn';
+    b.textContent = labReady ? 'Yes, reset everything' : 'Yes, install it';
+    setTimeout(() => { if (installArmed){ installArmed = false; b.className = 'btn-primary'; pollLab(); } }, 6000);
+    return;
+  }
+  installArmed = false; b.className = 'btn-primary'; b.disabled = true;
+  try {
+    const r = await api('/api/sdwan/lab/install', {method:'POST'});
+    installing = true; log(`Installing ${r.fabric}: every device boots from its snapshot`, 'act');
+    stopPing(); userPath = null;
+  } catch(err){ log(`Install failed: ${err.message}`, 'bad'); }
+  b.disabled = false; pollLab();
+});
+
+// ---------- What the user sees ----------
+let es = null, silenceLine = null, outageStart = null, pathTimer = null;
+function term(text, cls='r'){
+  const box = $('#term'); const span = document.createElement('span');
+  span.className = cls; span.textContent = text + '\n'; box.appendChild(span);
+  while (box.childNodes.length > 300) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight; return span;
+}
+function startPing(){
+  $('#term').innerHTML = ''; outageStart = null; silenceLine = null;
+  es = new EventSource('/api/sdwan/user/ping');
+  $('#ping-btn').textContent = 'Stop ping';
+  es.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.type === 'start') term(`$ ping ${m.target}`, 'i');
+    else if (m.type === 'reply'){
+      silenceLine = null;
+      term(`reply from target: seq=${m.seq} time=${m.ms.toFixed(1)} ms`);
+    } else if (m.type === 'silence'){
+      if (!outageStart) outageStart = Date.now();
+      const txt = `… no reply for ${m.seconds.toFixed(1)} s`;
+      if (silenceLine) silenceLine.textContent = txt + '\n'; else silenceLine = term(txt, 's');
+    } else if (m.type === 'lost'){
+      const secs = outageStart ? ((Date.now()-outageStart)/1000).toFixed(1) : null;
+      term(`✕ ${m.count} ${m.count===1?'reply':'replies'} lost (seq ${m.from}${m.to!==m.from?'–'+m.to:''})`, 'l');
+      $('#st-last').textContent = `${m.count} lost`;
+      log(`Users lost ${m.count} ${m.count===1?'ping':'pings'}${secs?` (about ${secs} s without internet)`:''}`, 'bad');
+      outageStart = null; checkPath();
+    } else if (m.type === 'stats'){
+      $('#st-sent').textContent = m.sent; $('#st-recv').textContent = m.received; $('#st-lost').textContent = m.lost;
+    } else if (m.type === 'error'){ term(m.error, 'l'); stopPing(); }
+    else if (m.type === 'end'){ term('ping stopped', 'i'); stopPing(); }
+  };
+  es.onerror = () => { if (es && es.readyState === EventSource.CLOSED){ term('Lost the connection to Corp_User', 'l'); stopPing(); } };
+  checkPath(); pathTimer = setInterval(checkPath, 6000);
+}
+function stopPing(){
+  if (es){ es.close(); es = null; }
+  clearInterval(pathTimer); pathTimer = null;
+  $('#ping-btn').textContent = 'Start ping';
+}
+$('#ping-btn').addEventListener('click', () => es ? stopPing() : startPing());
+
+let pathBusy = false;
+async function checkPath(){
+  if (pathBusy) return; pathBusy = true;
+  try {
+    const r = await api('/api/sdwan/user/path');
+    const link = story.links.find(l => l.member === r.member);
+    if (link){
+      if (userPath && userPath !== r.member) log(`Users' traffic moved to ${link.label} (${link.nick})`, 'act');
+      userPath = r.member;
+      $('#path-t').textContent = `${link.label} · ${link.nick}`;
+      $('#path-d').textContent = `First hop past the FortiGate: ${r.via}`;
+    } else {
+      userPath = null;
+      $('#path-t').textContent = 'No path right now';
+      $('#path-d').textContent = r.via ? `Hop 2 answered from ${r.via}` : 'Nothing answered past the FortiGate';
+    }
+  } catch(e){ $('#path-d').innerHTML = `<span class="err">${e.message}</span>`; }
+  pathBusy = false;
+}
+$('#path-btn').addEventListener('click', checkPath);
+
 (async () => {
+  pollLab();
   try {
     const st = await api('/api/sdwan/story');
     story.links = st.links; story.scenes = st.scenes;
