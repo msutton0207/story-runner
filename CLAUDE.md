@@ -63,6 +63,9 @@ Fabric Studio API (`/api/v1/runtime/cable/{id}:break` / `:repair`, OAuth2 client
 credentials in `FS_CREDENTIAL`). Scenes live in `app/scenes/sdwan.json` and name cables as
 `Device:port`; only those cables can be touched, and "Repair everything" resets them all.
 `GET /api/sdwan/cables` lists every running cable by name for checking the scene file.
+This demo deliberately uses a clean, flat style (Inter, blue header, white cards) instead of
+the comic look, with a live network map: green animated = in service, grey = taken out by
+SD-WAN, red dashed with an X = cable cut.
 
 ## Adding a demo
 
