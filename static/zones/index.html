@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who Gets the Backup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Who Gets the Backup: SD-WAN zones demo, same clean style as Keep the Lights On.
+   Live map with two zones, both users' pings side by side, scenes, circuits, timed log. */
+:root{
+  --bg:#F4F6FA; --surface:#FFFFFF; --fg:#0F1B2D; --muted:#5B6878; --line:#DDE3EC; --soft:#EEF2F8;
+  --brand:#2F6FDB; --brand-ink:#FFFFFF; --ok:#14A44D; --ok-soft:#E3F6EA; --bad:#DA291C; --bad-soft:#FDE8E6;
+  --idle:#9AA6B5; --node:#FFFFFF; --node-line:#B8C3D2; --cloud:#E6EEFB;
+  --f:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D141F;--surface:#151F2D;--fg:#E8EEF6;--muted:#9AA8B9;--line:#273447;--soft:#1B2738;--brand:#4C86EA;--ok-soft:#10301E;--bad-soft:#3A1715;--idle:#5D6B7C;--node:#1C2838;--node-line:#3A4A60;--cloud:#1A2A44;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D141F;--surface:#151F2D;--fg:#E8EEF6;--muted:#9AA8B9;--line:#273447;--soft:#1B2738;--brand:#4C86EA;--ok-soft:#10301E;--bad-soft:#3A1715;--idle:#5D6B7C;--node:#1C2838;--node-line:#3A4A60;--cloud:#1A2A44;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+a{color:inherit}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.back{font-weight:600;font-size:14px;text-decoration:none;color:var(--muted)}
+.back:hover{color:var(--fg)}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--idle)}
+.status.live i{background:var(--ok)} .status.sim i{background:#E8A400} .status.err i{background:var(--bad)}
+header{background:var(--brand);color:var(--brand-ink);border-radius:14px;padding:22px 24px;display:grid;gap:6px}
+header .eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+h1{font-size:clamp(26px,3.6vw,38px);font-weight:700;line-height:1.1;margin:0;letter-spacing:-.01em}
+header p{margin:0;max-width:66ch;opacity:.9}
+.sim-banner{display:none;background:#FFF4D6;color:#5A4300;border:1px solid #F0D58A;border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px}
+.sim-banner.on{display:block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:12px}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h2{font-size:17px;font-weight:700;margin:0}
+.sub{font-size:13px;color:var(--muted)}
+
+/* ---- network map ---- */
+.mapbox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.map{width:100%;min-width:620px;height:auto;display:block}
+.map text{font-family:var(--f);fill:var(--fg)}
+.map .lbl{font-size:15px;font-weight:600}
+.map .cap{font-size:12.5px;fill:var(--muted)}
+.map .nd rect,.map .nd circle{fill:var(--node);stroke:var(--node-line);stroke-width:1.5}
+.map .nd .ico{fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.map .fgt rect{fill:var(--bad);stroke:var(--bad)}
+.map .fgt .ico{stroke:#fff}
+.map .cloud path{fill:var(--cloud);stroke:var(--node-line);stroke-width:1.5}
+.map .lan{stroke:var(--node-line);stroke-width:3;fill:none}
+.seg .base{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke .3s}
+.seg .flow{fill:none;stroke-width:5;stroke-linecap:round;stroke-dasharray:2 16;opacity:0;animation:flow 1s linear infinite}
+.seg.ok .base{stroke:var(--ok)} .seg.ok .flow{opacity:1;stroke:#fff}
+.seg.idle .base{stroke:var(--idle)}
+.seg.cut .base{stroke:var(--bad);stroke-dasharray:10 9}
+.seg .x{opacity:0;transition:opacity .2s}
+.seg.cut .x{opacity:1}
+.seg .x circle{fill:var(--bad)} .seg .x path{stroke:#fff;stroke-width:3;stroke-linecap:round}
+.seg .pin{opacity:0} .seg.cut .pin{opacity:1}
+.seg .pin rect{fill:var(--bad)} .seg .pin text{fill:#fff;font-size:12px;font-weight:700}
+.tagbox rect{fill:var(--surface);stroke:var(--line)}
+.tagbox text{font-size:12.5px;font-weight:600}
+.tagbox .bad{fill:var(--bad)} .tagbox .good{fill:var(--ok)} .tagbox .nodata{fill:var(--muted)}
+@keyframes flow{to{stroke-dashoffset:-18}}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{display:inline-block;width:22px;height:4px;border-radius:2px}
+
+/* ---- circuits ---- */
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.link{border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
+.link.dead{border-left-color:var(--bad);background:var(--bad-soft)}
+.link.nodata{border-left-color:var(--idle);opacity:.6}
+.nodata .pill{background:var(--idle);color:#fff}
+.link-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.link h3{font-size:18px;font-weight:700;margin:0;line-height:1.2}
+.link h3 small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+.pill{font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--ok-soft);color:var(--ok);white-space:nowrap}
+.dead .pill{background:var(--bad);color:#fff}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.num{background:var(--soft);border-radius:8px;padding:8px 10px}
+.num b{display:block;font-size:20px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.num span{font-size:12px;color:var(--muted);font-weight:500}
+.spark{width:100%;height:40px;display:block;color:var(--brand)}
+.dead .spark{color:var(--bad)}
+.note{font-size:13px;color:var(--muted);min-height:1.5em}
+
+/* ---- scenes ---- */
+.scenes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.scene{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;align-content:start;background:var(--surface);transition:background .2s,border-color .2s}
+.scene.on{background:var(--bad-soft);border-color:var(--bad)}
+.scene h3{font-size:15.5px;font-weight:700;margin:0;line-height:1.3}
+.scene p{margin:0;font-size:13.5px;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 8px;background:var(--soft);color:var(--muted)}
+.chip.circuit{background:#E3EDFD;color:#1F4FA8} .chip.upstream{background:#FFF1D6;color:#7A5200}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.circuit{background:#1B2E4F;color:#9DBDF5}:root:not([data-theme="light"]) .chip.upstream{background:#3A2D10;color:#F0C873}}
+button{font-family:var(--f);font-weight:600;font-size:14.5px;border:1px solid transparent;border-radius:9px;padding:9px 14px;cursor:pointer;min-height:42px;transition:filter .15s,transform .05s}
+button:hover{filter:brightness(1.06)} button:active{transform:translateY(1px)}
+button:disabled{opacity:.55;cursor:wait}
+button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.btn-break{background:var(--bad);color:#fff}
+.btn-fix{background:var(--ok);color:#fff}
+.btn-reset{background:var(--surface);color:var(--fg);border-color:var(--line)}
+
+/* ---- log ---- */
+ol.log{list-style:none;margin:0;padding:0;display:grid;max-height:300px;overflow:auto}
+.log li{display:grid;grid-template-columns:72px 1fr;gap:10px;font-size:14px;padding:7px 0;border-bottom:1px solid var(--line)}
+.log li:last-child{border-bottom:0}
+.log time{font-variant-numeric:tabular-nums;color:var(--muted)}
+.log .bad{color:var(--bad);font-weight:600} .log .good{color:var(--ok);font-weight:600} .log .act{font-weight:600}
+.empty{color:var(--muted);font-size:14px}
+.log li.empty{display:block;border-bottom:0}
+.err{color:var(--bad);font-weight:600}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-warn{background:var(--bad);color:#fff}
+
+/* ---- lab readiness strip ---- */
+.lab{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.lab-l{display:grid;gap:8px}
+.lab-title{font-weight:700;font-size:15px}
+.checks{display:flex;gap:8px;flex-wrap:wrap}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface)}
+.chk i{width:8px;height:8px;border-radius:50%;background:var(--idle)}
+.chk.ok i{background:var(--ok)} .chk.no i{background:var(--bad)} .chk.wait i{background:#E8A400;animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.3}}
+.lab-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lab-msg{font-size:13px;color:var(--muted);max-width:46ch}
+
+/* ---- user's view ---- */
+.uv{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px}
+@media (max-width:760px){.uv{grid-template-columns:1fr}}
+.term{background:#0B1220;color:#C9D4E3;border-radius:10px;padding:10px 12px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.term .r{color:#C9D4E3} .term .l{color:#FF7B72;font-weight:700} .term .s{color:#E8A400} .term .i{color:#7EA6E8}
+.uv-side{display:grid;gap:10px;align-content:start}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat .num b{font-size:22px}
+.lostbig b{color:var(--bad)}
+.pathbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px}
+.pathbox b{font-size:16px}
+.pathbox span{font-size:12.5px;color:var(--muted)}
+.seg.path .base{stroke-width:8}
+.seg.ok.quiet .flow{opacity:0}
+.youare{opacity:0;transition:opacity .3s} .youare.on{opacity:1}
+.youare rect{fill:var(--brand)} .youare text{fill:#fff;font-size:12.5px;font-weight:700}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ---- additions for Who Gets the Backup: zones, two users, per-user badges ---- */
+.map{min-width:640px}
+.map .zone{fill:none;stroke:var(--node-line);stroke-width:1.5;stroke-dasharray:6 5}
+.map .zl{font-size:11px;font-weight:700;letter-spacing:.08em;fill:var(--muted)}
+.map .isp{font-size:13.5px;font-weight:600}
+.map .tg{font-size:12px;font-weight:600;fill:var(--muted)}
+.map .tg.good{fill:var(--ok)} .map .tg.bad{fill:var(--bad)}
+.youare.guest rect{fill:#8A5CD1}
+.users{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px}
+.user{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:10px;align-content:start}
+.user.dark{border-color:var(--bad);background:var(--bad-soft)}
+.user-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.user h3{margin:0;font-size:16px;font-weight:700}
+.user h3 small{font-size:12.5px;font-weight:500;color:var(--muted);margin-left:6px}
+.rule{font-size:13px;color:var(--muted);margin:0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
+.user .term{height:180px}
+.user .stat{grid-template-columns:repeat(4,1fr)}
+@media (max-width:520px){.user .stat{grid-template-columns:repeat(2,1fr)}}
+.state{font-size:12.5px;font-weight:700;border-radius:999px;padding:2px 10px;background:var(--soft);color:var(--muted)}
+.state.on{background:var(--ok-soft);color:var(--ok)} .state.off{background:var(--bad);color:#fff}
+.expect{font-size:13px;margin:0;border-left:3px solid var(--brand);padding:2px 0 2px 8px}
+.expect b{font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="/">← Demo Lab</a>
+    <span class="status" id="status"><i></i><span id="status-t">Checking the lab…</span></span>
+  </div>
+
+  <header>
+    <span class="eyebrow">SD-WAN zones · live lab</span>
+    <h1 id="title">Who Gets the Backup</h1>
+    <p>Two broadband circuits and one cellular backup. Staff and guests share the building's internet, but only staff get the backup. Break things for real and watch the FortiGate decide.</p>
+  </header>
+
+  <div class="sim-banner" id="sim">Simulated: built-in data, nothing in the lab is changing. Set SIM_MODE=false and add the lab credentials to go live.</div>
+
+  <section class="card lab" aria-label="Lab readiness">
+    <div class="lab-l">
+      <span class="lab-title" id="lab-title">Checking the lab…</span>
+      <div class="checks" id="checks"></div>
+    </div>
+    <div class="lab-r">
+      <span class="lab-msg" id="lab-msg"></span>
+      <button class="btn-primary" id="install" hidden>Install the lab</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-map">
+    <div class="card-h"><h2 id="h-map">The network</h2><span class="sub" id="updated"></span></div>
+    <div class="mapbox"><svg class="map" id="map" viewBox="0 20 1000 466" role="img" aria-labelledby="map-t">
+      <title id="map-t">Staff and guests through a FortiSwitch and FortiGate, out over two broadband circuits in one zone and a cellular circuit in another, to the internet</title>
+      <!-- LAN side: staff + guests -> switch -> FortiGate -->
+      <path class="lan" d="M118 160 C170 160 180 230 212 230"/><path class="lan" d="M118 300 C170 300 180 230 212 230"/>
+      <path class="lan" d="M288 230 H339"/>
+
+      <!-- zones (around the ISP routers) -->
+      <rect class="zone" x="578" y="30" width="144" height="292" rx="14"/><text class="zl" x="650" y="47" text-anchor="middle">BROADBAND ZONE</text>
+      <rect class="zone" x="578" y="338" width="144" height="138" rx="14"/><text class="zl" x="650" y="355" text-anchor="middle">CELLULAR ZONE</text>
+
+      <!-- WAN segments: circuit = FortiGate to ISP, upstream = ISP to internet -->
+      <g class="seg ok" id="seg-port2-circuit"><path class="base" d="M421 214 C490 214 500 100 616 100"/><path class="flow" d="M421 214 C490 214 500 100 616 100"/>
+        <g class="x" transform="translate(501 157)"><circle r="14"/><path d="M-5 -5L5 5M5 -5L-5 5"/></g></g>
+      <g class="seg ok" id="seg-port2-upstream"><path class="base" d="M684 100 C760 100 770 222 812 228"/><path class="flow" d="M684 100 C760 100 770 222 812 228"/>
+        <g class="x" transform="translate(761 162)"><circle r="14"/><path d="M-5 -5L5 5M5 -5L-5 5"/></g></g>
+      <g class="seg ok" id="seg-port4-circuit"><path class="base" d="M421 230 H616"/><path class="flow" d="M421 230 H616"/>
+        <g class="x" transform="translate(518 230)"><circle r="14"/><path d="M-5 -5L5 5M5 -5L-5 5"/></g></g>
+      <g class="seg ok" id="seg-port4-upstream"><path class="base" d="M684 230 C740 230 760 240 808 240"/><path class="flow" d="M684 230 C740 230 760 240 808 240"/>
+        <g class="x" transform="translate(749 235)"><circle r="14"/><path d="M-5 -5L5 5M5 -5L-5 5"/></g></g>
+      <g class="seg ok" id="seg-port5-circuit"><path class="base" d="M421 246 C490 246 500 400 616 400"/><path class="flow" d="M421 246 C490 246 500 400 616 400"/>
+        <g class="x" transform="translate(501 323)"><circle r="14"/><path d="M-5 -5L5 5M5 -5L-5 5"/></g></g>
+      <g class="seg ok" id="seg-port5-upstream"><path class="base" d="M684 400 C760 400 770 258 812 252"/><path class="flow" d="M684 400 C760 400 770 258 812 252"/>
+        <g class="x" transform="translate(761 328)"><circle r="14"/><path d="M-5 -5L5 5M5 -5L-5 5"/></g></g>
+
+      <!-- nodes -->
+      <g class="nd" transform="translate(80 160)">
+        <circle r="38"/>
+        <g class="ico"><circle cx="-9" cy="-8" r="7"/><path d="M-22 14c0-9 6-13 13-13s13 4 13 13"/><circle cx="11" cy="-4" r="5.5"/><path d="M6 6c2-1 3-1 5-1 6 0 10 3 10 10"/></g>
+        <text class="lbl" y="58" text-anchor="middle" id="u-corp-l">Staff</text><text class="cap" y="75" text-anchor="middle" id="u-corp-c">Corp LAN</text>
+      </g>
+      <g class="nd" transform="translate(80 300)">
+        <circle r="38"/>
+        <g class="ico"><path d="M-14 -2a20 20 0 0 1 28 0M-8 5a11 11 0 0 1 16 0"/><circle cx="0" cy="12" r="2.5"/><path d="M-20 -9a29 29 0 0 1 40 0"/></g>
+        <text class="lbl" y="58" text-anchor="middle" id="u-guest-l">Guests</text><text class="cap" y="75" text-anchor="middle" id="u-guest-c">Guest Wi-Fi</text>
+      </g>
+      <g class="nd" transform="translate(250 230)">
+        <rect x="-38" y="-22" width="76" height="44" rx="8"/>
+        <g class="ico"><path d="M-22 -6H18M12 -12l6 6-6 6M22 6H-18M-12 0l-6 6 6 6"/></g>
+        <text class="lbl" y="44" text-anchor="middle">FortiSwitch</text><text class="cap" y="61" text-anchor="middle">FSW_01</text>
+      </g>
+      <g class="nd fgt" transform="translate(380 230)">
+        <rect x="-41" y="-34" width="82" height="68" rx="10"/>
+        <g class="ico"><path d="M-14 -14h28v28h-28z"/><path d="M-14 -4h28M-14 6h28M-4 -14v10M6 -4v10M-4 6v8"/></g>
+        <text class="lbl" y="56" text-anchor="middle">FortiGate</text><text class="cap" y="73" text-anchor="middle">SD-WAN</text>
+      </g>
+      <g class="nd" transform="translate(650 100)"><circle r="34"/><g class="ico"><path d="M-14 0h28M7 -7l7 7-7 7M0 -14v28M-7 7l7 7 7-7"/></g>
+        <text class="isp" y="50" text-anchor="middle">Broadband 1</text><text class="tg" y="66" text-anchor="middle" id="tag-port2">port2</text></g>
+      <g class="nd" transform="translate(650 230)"><circle r="34"/><g class="ico"><path d="M-14 0h28M7 -7l7 7-7 7M0 -14v28M-7 7l7 7 7-7"/></g>
+        <text class="isp" y="50" text-anchor="middle">Broadband 2</text><text class="tg" y="66" text-anchor="middle" id="tag-port4">port4</text></g>
+      <g class="nd" transform="translate(650 400)"><circle r="32"/><g class="ico"><path d="M-14 0h28M7 -7l7 7-7 7M0 -14v28M-7 7l7 7 7-7"/></g>
+        <text class="isp" y="48" text-anchor="middle">Cellular</text><text class="tg" y="64" text-anchor="middle" id="tag-port5">port5</text></g>
+      <g class="cloud" transform="translate(890 240)">
+        <path d="M-58 22c-18 0-26-12-24-24 2-13 14-19 25-16 4-17 18-27 35-25 15 1 26 11 30 24 15-4 30 6 31 21 2 14-9 23-22 23z"/>
+        <text class="lbl" y="7" text-anchor="middle">Internet</text>
+      </g>
+
+      <!-- whose traffic is on which circuit (from each user's traceroute) -->
+      <g class="youare" id="you-corp-port2" transform="translate(470 62)"><rect width="60" height="22" rx="11"/><text x="30" y="15.5" text-anchor="middle">Staff</text></g>
+      <g class="youare guest" id="you-guest-port2" transform="translate(536 62)"><rect width="66" height="22" rx="11"/><text x="33" y="15.5" text-anchor="middle">Guests</text></g>
+      <g class="youare" id="you-corp-port4" transform="translate(470 240)"><rect width="60" height="22" rx="11"/><text x="30" y="15.5" text-anchor="middle">Staff</text></g>
+      <g class="youare guest" id="you-guest-port4" transform="translate(536 240)"><rect width="66" height="22" rx="11"/><text x="33" y="15.5" text-anchor="middle">Guests</text></g>
+      <g class="youare" id="you-corp-port5" transform="translate(470 412)"><rect width="60" height="22" rx="11"/><text x="30" y="15.5" text-anchor="middle">Staff</text></g>
+      <g class="youare guest" id="you-guest-port5" transform="translate(536 412)"><rect width="66" height="22" rx="11"/><text x="33" y="15.5" text-anchor="middle">Guests</text></g>
+    </svg></div>
+    <div class="legend">
+      <span><b style="background:var(--ok)"></b>In service, traffic can flow</span>
+      <span><b style="background:var(--idle)"></b>Out of service (taken out by SD-WAN)</span>
+      <span><b style="background:repeating-linear-gradient(90deg,var(--bad) 0 6px,transparent 6px 10px)"></b>Cable cut</span>
+      <span><b style="background:var(--brand);height:10px;border-radius:5px"></b>Staff traffic</span>
+      <span><b style="background:#8A5CD1;height:10px;border-radius:5px"></b>Guest traffic</span>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-uv">
+    <div class="card-h">
+      <h2 id="h-uv">What the users see</h2>
+      <div class="lab-r"><span class="sub">Both users, pinging the internet</span><button class="btn-reset" id="path-btn">Check paths now</button><button class="btn-primary" id="ping-btn">Start pings</button></div>
+    </div>
+    <div class="users" id="users"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-scenes">
+    <div class="card-h">
+      <h2 id="h-scenes">Break something</h2>
+      <button class="btn-reset" id="reset">Repair everything</button>
+    </div>
+    <div class="scenes" id="scenes"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-links">
+    <div class="card-h"><h2 id="h-links">The circuits</h2><span class="sub">Measured by the FortiGate's health probes</span></div>
+    <div class="links" id="links"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-log">
+    <h2 id="h-log">What just happened</h2>
+    <ol class="log" id="log"><li class="empty" id="log-empty">Nothing yet. Break something and the timings show up here.</li></ol>
+  </section>
+</div>
+
+<script>
+const API = '/api/zones';
+const $ = s => document.querySelector(s);
+const story = {links: [], scenes: [], users: []};
+const hist = {};          // member -> recent latency values for the sparkline
+const prev = {};          // member -> last alive state
+const pending = {};       // member -> {t, title} when a break was pressed, to time detection
+let lastBroken = [], lastCuts = [];
+const paths = {};          // user id -> member their traffic is on (from traceroute), or null
+let labReady = false;
+
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function stamp(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}); }
+function log(html, cls=''){
+  const empty = $('#log-empty'); if (empty) empty.remove();
+  const li = document.createElement('li');
+  li.innerHTML = `<time>${stamp()}</time><span class="${cls}">${html}</span>`;
+  $('#log').prepend(li);
+}
+function fmt(v, unit){ return (v === null || v === undefined || v === '') ? '—' : `${Number(v).toFixed(1)}${unit}`; }
+const linkOf = m => story.links.find(l => l.member === m);
+const userOf = id => story.users.find(u => u.id === id) || {label: id};
+
+function spark(member){
+  const h = hist[member] || [];
+  if (!h.length) return '';
+  const max = Math.max(20, ...h.filter(v=>v!=null));
+  const pts = h.map((v,i)=>`${(i/(Math.max(h.length-1,1)))*100},${v==null?38:36-(v/max)*32}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+// Paint the map: each WAN has a circuit segment (FortiGate to ISP) and an upstream segment (ISP to internet).
+function drawMap(links, cuts){
+  const cut = new Set(cuts.map(c => `${c.member}-${c.kind}`));
+  const known = Object.values(paths).some(Boolean);
+  const used = new Set(Object.values(paths).filter(Boolean));
+  for (const l of links){
+    for (const kind of ['circuit','upstream']){
+      const g = document.getElementById(`seg-${l.member}-${kind}`); if (!g) continue;
+      g.classList.remove('ok','idle','cut','path','quiet');
+      g.classList.add(cut.has(`${l.member}-${kind}`) ? 'cut' : (l.alive ? 'ok' : 'idle'));
+      // Once we know where traffic is, only the circuits someone is using get the moving dots.
+      if (known) g.classList.add(used.has(l.member) ? 'path' : 'quiet');
+    }
+    for (const u of story.users){
+      const b = document.getElementById(`you-${u.id}-${l.member}`);
+      if (b) b.classList.toggle('on', paths[u.id] === l.member);
+    }
+    const tag = document.getElementById(`tag-${l.member}`);
+    if (tag){
+      tag.textContent = l.alive ? `${fmt(l.latency,' ms')} · ${fmt(l.loss,'%')} loss` : 'Out of service';
+      tag.setAttribute('class', 'tg ' + (l.alive ? 'good' : 'bad'));
+    }
+  }
+}
+
+function drawLinks(links){
+  $('#links').innerHTML = links.map(l => {
+    const dead = !l.alive;
+    const why = dead ? (l.link_up === false ? 'The port is down: the FortiGate saw the cable go.' : 'The port is up, but probes past the ISP are failing.') : 'Probes to the internet are answering.';
+    const who = story.users.filter(u => paths[u.id] === l.member).map(u => u.label);
+    return `<article class="link ${dead?'dead':''}">
+      <div class="link-top"><h3>${esc(l.label)} · ${esc(l.nick)}<small>FortiGate ${esc(l.member)} · ${esc(l.zone||'')} zone</small></h3><span class="pill">${dead?'Out of service':'In service'}</span></div>
+      <div class="nums">
+        <div class="num"><b>${fmt(l.latency,' ms')}</b><span>Latency</span></div>
+        <div class="num"><b>${fmt(l.jitter,' ms')}</b><span>Jitter</span></div>
+        <div class="num"><b>${fmt(l.loss,'%')}</b><span>Packet loss</span></div>
+      </div>
+      ${spark(l.member)}
+      <div class="note">${why}${who.length ? ` Carrying: ${esc(who.join(' and '))}.` : ''}</div>
+    </article>`;
+  }).join('');
+}
+
+function drawScenes(broken){
+  $('#scenes').innerHTML = story.scenes.map(s => {
+    const on = broken.includes(s.id);
+    const kinds = [...new Set(s.cuts.map(c => c.kind))];
+    const nicks = [...new Set(s.cuts.map(c => (linkOf(c.member)||{}).nick || c.member))];
+    return `<article class="scene ${on?'on':''}">
+      <div class="chips">${kinds.map(k => `<span class="chip ${k}">${k==='circuit'?'Circuit cut':'Upstream outage'}</span>`).join('')}<span class="chip">${esc(nicks.join(' + '))}</span></div>
+      <h3>${esc(s.title)}</h3>
+      <p>${esc(s.blurb)}</p>
+      ${s.expect ? `<p class="expect"><b>Watch for:</b> ${esc(s.expect)}</p>` : ''}
+      ${on ? `<button class="btn-fix" data-id="${esc(s.id)}" data-act="repair">Fix it</button>`
+           : `<button class="btn-break" data-id="${esc(s.id)}" data-act="break">Break it</button>`}
+    </article>`;
+  }).join('');
+}
+
+async function api(path, opts){
+  const r = await fetch(API + path, opts);
+  const body = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(body.detail || body.error || `HTTP ${r.status}`);
+  return body;
+}
+
+async function poll(){
+  try {
+    const s = await api('/status');
+    const st = $('#status'), t = $('#status-t');
+    st.className = 'status ' + (s.source === 'live' ? 'live' : 'sim');
+    t.textContent = s.source === 'live' ? 'Connected to the lab' : 'Simulated mode';
+    $('#sim').classList.toggle('on', s.source !== 'live');
+    for (const l of s.links){
+      (hist[l.member] ||= []).push(l.alive ? l.latency : null);
+      if (hist[l.member].length > 60) hist[l.member].shift();
+      if (prev[l.member] !== undefined && prev[l.member] !== l.alive){
+        const p = pending[l.member];
+        const secs = p ? ` · ${((Date.now()-p.t)/1000).toFixed(1)} s after “${esc(p.title)}”` : '';
+        log(l.alive ? `${esc(l.nick)} back in service${secs}` : `${esc(l.nick)} taken out of service${secs}`, l.alive ? 'good' : 'bad');
+        delete pending[l.member];
+        checkPaths();
+      }
+      prev[l.member] = l.alive;
+    }
+    if (JSON.stringify(s.broken) !== JSON.stringify(lastBroken)){ lastBroken = s.broken; drawScenes(lastBroken); }
+    lastCuts = s.cuts || [];
+    drawLinks(s.links);
+    drawMap(s.links, lastCuts);
+    $('#updated').textContent = (s.source === 'live' ? 'Live · updated ' : 'Updated ') + stamp();
+  } catch(e){
+    $('#status').className = 'status err'; $('#status-t').textContent = 'Lab not reachable';
+    $('#updated').innerHTML = `<span class="err">No live data: ${esc(e.message)}</span>`;
+    showNoData();
+  }
+}
+
+// When the FortiGate stops answering (lab rebuilding, powered off), never leave the last
+// good numbers on screen: grey every link out and say there's no data.
+function showNoData(){
+  for (const k of Object.keys(prev)) delete prev[k];
+  for (const k of Object.keys(paths)) paths[k] = null;
+  for (const l of story.links){
+    for (const kind of ['circuit','upstream']){
+      const g = document.getElementById(`seg-${l.member}-${kind}`); if (!g) continue;
+      g.classList.remove('ok','cut','path','quiet'); g.classList.add('idle');
+    }
+    for (const u of story.users){ const b = document.getElementById(`you-${u.id}-${l.member}`); if (b) b.classList.remove('on'); }
+    const tag = document.getElementById(`tag-${l.member}`);
+    if (tag){ tag.textContent = 'No data'; tag.setAttribute('class', 'tg'); }
+  }
+  $('#links').innerHTML = story.links.map(l => `<article class="link nodata">
+      <div class="link-top"><h3>${esc(l.label)} · ${esc(l.nick)}<small>FortiGate ${esc(l.member)}</small></h3><span class="pill">No data</span></div>
+      <div class="note">The FortiGate isn't answering, so there are no live numbers to show.</div>
+    </article>`).join('');
+}
+
+$('#scenes').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-id]'); if (!b) return;
+  const s = story.scenes.find(x => x.id === b.dataset.id); const act = b.dataset.act;
+  b.disabled = true;
+  try {
+    await api(`/scene/${encodeURIComponent(s.id)}/${act}`, {method:'POST'});
+    for (const c of s.cuts) pending[c.member] = {t: Date.now(), title: s.title};
+    log(act === 'break' ? `Pressed: ${esc(s.title)}` : `Fixed: ${esc(s.title)}`, 'act');
+  } catch(err){ log(`Couldn't ${act} “${esc(s.title)}”: ${esc(err.message)}`, 'bad'); b.disabled = false; }
+  poll();
+});
+
+$('#reset').addEventListener('click', async e => {
+  const b = e.currentTarget; b.disabled = true;
+  try {
+    const r = await api('/reset', {method:'POST'});
+    log(r.ok ? 'Repaired every scene cable' : `Repair finished with problems: ${esc((r.errors||[]).join('; '))}`, r.ok ? 'good' : 'bad');
+  } catch(err){ log(`Repair everything failed: ${esc(err.message)}`, 'bad'); }
+  b.disabled = false; poll();
+});
+
+// ---------- Getting the lab ready ----------
+let installArmed = false, installing = false;
+async function pollLab(){
+  try {
+    const L = await api('/lab');
+    const wasInstalling = installing;
+    labReady = L.ready; installing = L.installing || (installing && !L.ready);
+    $('#checks').innerHTML = L.checks.map(c => `<span class="chk ${c.ok?'ok':(installing?'wait':'no')}" title="${esc(c.detail||'')}"><i></i>${esc(c.label)}</span>`).join('');
+    const others = (L.installed_fabrics||[]).filter(n => n !== L.fabric);
+    const btn = $('#install');
+    if (L.ready){
+      $('#lab-title').textContent = 'Lab ready';
+      $('#lab-msg').textContent = `${L.fabric} is up. Reinstalling resets every device to its saved baseline.`;
+      btn.hidden = false; if (!installArmed) btn.textContent = 'Reset the lab';
+      if (wasInstalling){ installing = false; log('Lab is ready', 'good'); }
+    } else if (installing){
+      $('#lab-title').textContent = 'Installing the lab…';
+      $('#lab-msg').textContent = 'Devices boot from their snapshots. This takes a few minutes; the checks turn green as each piece comes up.';
+      btn.hidden = true;
+    } else {
+      $('#lab-title').textContent = 'Lab not ready';
+      $('#lab-msg').textContent = others.length ? `Running now: ${others.join(', ')}. Installing ${L.fabric} will stop it.` : `Install ${L.fabric} to start.`;
+      btn.hidden = false; if (!installArmed) btn.textContent = 'Install the lab';
+    }
+  } catch(e){
+    $('#lab-title').textContent = 'Can’t check the lab';
+    $('#lab-msg').innerHTML = `<span class="err">${esc(e.message)}</span>`;
+  }
+  setTimeout(pollLab, labReady && !installing ? 15000 : 3000);
+}
+$('#install').addEventListener('click', async e => {
+  const b = e.currentTarget;
+  if (!installArmed){   // two-step: first click asks, second click does it
+    installArmed = true; b.className = 'btn-warn';
+    b.textContent = labReady ? 'Yes, reset everything' : 'Yes, install it';
+    setTimeout(() => { if (installArmed){ installArmed = false; b.className = 'btn-primary'; pollLab(); } }, 6000);
+    return;
+  }
+  installArmed = false; b.className = 'btn-primary'; b.disabled = true;
+  try {
+    const r = await api('/lab/install', {method:'POST'});
+    installing = true; log(`Installing ${esc(r.fabric)}: every device boots from its snapshot`, 'act');
+    stopPings(); for (const k of Object.keys(paths)) paths[k] = null;
+  } catch(err){ log(`Install failed: ${esc(err.message)}`, 'bad'); }
+  b.disabled = false; pollLab();
+});
+
+// ---------- What the users see: one panel per user ----------
+const P = {};   // user id -> {es, silenceLine, outageStart, darkLogged}
+function drawUsers(){
+  $('#users').innerHTML = story.users.map(u => `
+    <div class="user" id="user-${esc(u.id)}">
+      <div class="user-h">
+        <h3><span class="dot" style="background:${u.id==='guest'?'#8A5CD1':'var(--brand)'}"></span>${esc(u.label)}<small>${esc(u.name)} · ${esc(u.lan||'')}</small></h3>
+        <span class="state" id="state-${esc(u.id)}">Not pinging</span>
+      </div>
+      ${u.rule ? `<p class="rule">Allowed out: ${esc(u.rule)}</p>` : ''}
+      <div class="term" id="term-${esc(u.id)}" aria-live="off"><span class="i">Press “Start pings” to watch ${esc(u.name)} ping the internet live.</span>
+</div>
+      <div class="stat">
+        <div class="num"><b id="sent-${esc(u.id)}">0</b><span>Sent</span></div>
+        <div class="num"><b id="recv-${esc(u.id)}">0</b><span>Answered</span></div>
+        <div class="num lostbig"><b id="lost-${esc(u.id)}">0</b><span>Lost</span></div>
+        <div class="num"><b id="last-${esc(u.id)}">—</b><span>Last outage</span></div>
+      </div>
+      <div class="pathbox">
+        <span>Their traffic is going out</span>
+        <b id="path-t-${esc(u.id)}">Unknown</b>
+        <span id="path-d-${esc(u.id)}">Checked with a traceroute from ${esc(u.name)}</span>
+      </div>
+    </div>`).join('');
+}
+function term(uid, text, cls='r'){
+  const box = $(`#term-${uid}`); const span = document.createElement('span');
+  span.className = cls; span.textContent = text + '\n'; box.appendChild(span);
+  while (box.childNodes.length > 300) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight; return span;
+}
+function setState(uid, txt, cls){ const el = $(`#state-${uid}`); el.textContent = txt; el.className = 'state ' + (cls||''); }
+function darkPanel(uid, on){ $(`#user-${uid}`).classList.toggle('dark', on); }
+
+function startPing(u){
+  const uid = u.id;
+  $(`#term-${uid}`).innerHTML = '';
+  const p = P[uid] = {es: new EventSource(`${API}/user/ping?u=${encodeURIComponent(uid)}`), silenceLine: null, outageStart: null, darkLogged: false};
+  setState(uid, 'Connecting…');
+  p.es.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.type === 'start'){ term(uid, `$ ping ${m.target}`, 'i'); setState(uid, 'Online', 'on'); }
+    else if (m.type === 'reply'){
+      p.silenceLine = null;
+      if (p.darkLogged){ p.darkLogged = false; darkPanel(uid, false); setState(uid, 'Online', 'on'); }
+      term(uid, `reply from target: seq=${m.seq} time=${m.ms.toFixed(1)} ms`);
+    } else if (m.type === 'silence'){
+      if (!p.outageStart) p.outageStart = Date.now();
+      const txt = `… no reply for ${m.seconds.toFixed(1)} s`;
+      if (p.silenceLine) p.silenceLine.textContent = txt + '\n'; else p.silenceLine = term(uid, txt, 's');
+      if (m.seconds >= 2.5 && !p.darkLogged){
+        p.darkLogged = true; darkPanel(uid, true); setState(uid, 'No internet', 'off');
+        log(`${esc(u.label)} have no internet`, 'bad'); checkPath(u);
+      }
+    } else if (m.type === 'lost'){
+      const secs = p.outageStart ? ((Date.now()-p.outageStart)/1000).toFixed(1) : null;
+      term(uid, `✕ ${m.count} ${m.count===1?'reply':'replies'} lost (seq ${m.from}${m.to!==m.from?'–'+m.to:''})`, 'l');
+      $(`#last-${uid}`).textContent = `${m.count} lost`;
+      log(`${esc(u.label)} lost ${m.count} ${m.count===1?'ping':'pings'}${secs?` (about ${secs} s without internet)`:''}`, 'bad');
+      p.outageStart = null; checkPath(u);
+    } else if (m.type === 'stats'){
+      $(`#sent-${uid}`).textContent = m.sent; $(`#recv-${uid}`).textContent = m.received; $(`#lost-${uid}`).textContent = m.lost;
+    } else if (m.type === 'error'){ term(uid, m.error, 'l'); stopPing(uid); setState(uid, 'Error', 'off'); }
+    else if (m.type === 'end'){ term(uid, 'ping stopped', 'i'); stopPing(uid); }
+  };
+  p.es.onerror = () => { if (p.es && p.es.readyState === EventSource.CLOSED){ term(uid, `Lost the connection to ${u.name}`, 'l'); stopPing(uid); } };
+}
+function stopPing(uid){
+  const p = P[uid]; if (!p) return;
+  if (p.es){ p.es.close(); p.es = null; }
+  delete P[uid]; darkPanel(uid, false); setState(uid, 'Not pinging');
+  if (!Object.keys(P).length){ clearInterval(pathTimer); pathTimer = null; $('#ping-btn').textContent = 'Start pings'; }
+}
+let pathTimer = null;
+function stopPings(){ for (const uid of Object.keys(P)) stopPing(uid); }
+$('#ping-btn').addEventListener('click', () => {
+  if (Object.keys(P).length){ stopPings(); return; }
+  for (const u of story.users) startPing(u);
+  $('#ping-btn').textContent = 'Stop pings';
+  checkPaths(); pathTimer = setInterval(checkPaths, 6000);
+});
+
+const pathBusy = {};
+async function checkPath(u){
+  if (pathBusy[u.id]) return; pathBusy[u.id] = true;
+  try {
+    const r = await api(`/user/path?u=${encodeURIComponent(u.id)}`);
+    const link = linkOf(r.member);
+    if (link){
+      if (paths[u.id] && paths[u.id] !== r.member) log(`${esc(u.label)} moved to ${esc(link.nick)}`, 'act');
+      paths[u.id] = r.member;
+      $(`#path-t-${u.id}`).textContent = `${link.label} · ${link.nick}`;
+      $(`#path-d-${u.id}`).textContent = `First hop past the FortiGate: ${r.via}`;
+    } else {
+      if (paths[u.id]) log(`${esc(u.label)} have no way out`, 'bad');
+      paths[u.id] = null;
+      $(`#path-t-${u.id}`).textContent = 'No way out right now';
+      $(`#path-d-${u.id}`).textContent = r.via ? `Hop 2 answered from ${r.via}` : 'Nothing answered past the FortiGate';
+    }
+  } catch(e){ $(`#path-d-${u.id}`).innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  pathBusy[u.id] = false;
+}
+function checkPaths(){ for (const u of story.users) checkPath(u); }
+$('#path-btn').addEventListener('click', checkPaths);
+
+(async () => {
+  pollLab();
+  try {
+    const st = await api('/story');
+    story.links = st.links; story.scenes = st.scenes; story.users = st.users;
+    $('#title').textContent = st.title; document.title = st.title;
+    for (const u of story.users){
+      const l = document.getElementById(`u-${u.id}-l`), c = document.getElementById(`u-${u.id}-c`);
+      if (l) l.textContent = u.label; if (c) c.textContent = u.lan || u.name;
+    }
+    drawUsers(); drawScenes([]);
+  } catch(e){ log(`Couldn't load the scenes: ${esc(e.message)}`, 'bad'); }
+  poll(); setInterval(poll, 1000);
+})();
+</script>
+</body>
+</html>

@@ -16,7 +16,8 @@ from . import sdwan
 from .lab import FGT_HOST, FGT_TOKEN, SIM_MODE, fgt_get
 
 app = FastAPI(title="Story Runner", docs_url=None, redoc_url=None)
-app.include_router(sdwan.router)
+for _r in sdwan.routers:
+    app.include_router(_r)
 
 
 @app.get("/api/health")

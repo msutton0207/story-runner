@@ -12,6 +12,7 @@ full-time developer: explain changes plainly and give exact commands to run.
     Dockerfile, app/main.py   Python FastAPI backend: serves static/ and the /api/* endpoints
     static/index.html         "Demo Lab" landing page, one card per demo
     static/two-fridays/       Two Fridays demo (single HTML file)
+    static/sdwan/, zones/     Keep the Lights On, Who Gets the Backup (SD-WAN; app/sdwan.py)
     ai-basics/                AI Basics Lab: zero-dependency Node server + public/story.html
                               (story mode, default) and public/index.html (tabbed lab at /lab)
     update.sh                 run on the VM: git pull + rebuild + restart
@@ -75,6 +76,23 @@ Also on the page:
   runs only two fixed commands: `ping` (streamed to the page as server-sent events, with lost
   replies counted) and a 2-hop `traceroute`, whose second hop (the ISP router's gateway in
   `links[].gateway`) shows which WAN the users' traffic is really on. The map highlights it.
+
+**Who Gets the Backup** (`static/zones/`, scenes `app/scenes/zones.json`, API `/api/zones`):
+the SD-WAN zones demo on fabric `Story-Fabric-SDWAN_Zones`. Broadband 1 (port2, Router_1) and
+Broadband 2 (port4, Router_2) in the Broadband zone; Cellular (port5, Router_3, gateway
+192.0.3.254, ~50 ms Traffic Control) in its own zone. Staff (Corp_User, 10.0.10.0/24) prefer
+Broadband 1 and may fall back to cellular; guests (Guest_User, 10.0.20.0/24, SSH 11003) prefer
+Broadband 2 and are kept off cellular by firewall policy. The punchline scene cuts both
+broadband circuits: staff stay up on cellular, guests go dark on purpose. Same clean style as
+Keep the Lights On, with both users' pings side by side.
+
+How the SD-WAN demos are built: `app/sdwan.py` `make_router(slug, scene_file)` gives each scene
+file its own `/api/<slug>/...` endpoints (story, status, scene break/repair, reset, cables, lab,
+lab/install, user/ping?u=, user/path?u=). Scenes list `cuts` (one or more cables), so a scene
+can cut several at once; cables already in the wanted state are skipped. Users come from the
+scene file's `users` list and `app/labusers.py` (`<ENV>_SSH_*` in .env, GUEST_ falls back to
+CORP_). The lab check fails "Fabric installed" if a different fabric is running. Fabric Studio
+snapshots: Story-<device>-Zones-v<n> for this fabric, Story-<device>-SDWAN-v<n> for the other.
 
 ## Adding a demo
 

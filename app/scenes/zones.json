@@ -1,0 +1,149 @@
+{
+  "title": "Who Gets the Backup",
+  "about": "Scenes for the Story-Fabric-SDWAN_Zones fabric. Two broadband circuits in one SD-WAN zone, cellular in its own zone. Staff may use cellular; guests may not (firewall policy), so when both broadband circuits fail, staff stay online and guests go dark on purpose. Cables are named 'Device:port' exactly as Fabric Studio shows them. Only cables listed here can ever be broken or repaired by story-runner.",
+  "fabric": "Story-Fabric-SDWAN_Zones",
+  "switch": "FSW_01",
+  "links": [
+    {
+      "member": "port2",
+      "label": "WAN1",
+      "nick": "Broadband 1",
+      "zone": "Broadband",
+      "gateway": "203.0.113.254",
+      "sim_latency": 13.5
+    },
+    {
+      "member": "port4",
+      "label": "WAN2",
+      "nick": "Broadband 2",
+      "zone": "Broadband",
+      "gateway": "192.0.2.254",
+      "sim_latency": 14.5
+    },
+    {
+      "member": "port5",
+      "label": "WAN3",
+      "nick": "Cellular",
+      "zone": "Cellular",
+      "gateway": "192.0.3.254",
+      "sim_latency": 52
+    }
+  ],
+  "users": [
+    {
+      "id": "corp",
+      "name": "Corp_User",
+      "label": "Staff",
+      "lan": "Corp LAN",
+      "env": "CORP",
+      "sim_path": [
+        "port2",
+        "port4",
+        "port5"
+      ],
+      "rule": "Broadband 1, then Broadband 2, then cellular as a last resort."
+    },
+    {
+      "id": "guest",
+      "name": "Guest_User",
+      "label": "Guests",
+      "lan": "Guest Wi-Fi",
+      "env": "GUEST",
+      "sim_path": [
+        "port4",
+        "port2"
+      ],
+      "rule": "Broadband 2, then Broadband 1. Never cellular: the firewall policy doesn't allow it."
+    }
+  ],
+  "scenes": [
+    {
+      "id": "cut-bb1",
+      "title": "Cut Broadband 1",
+      "blurb": "A backhoe finds the fiber. The FortiGate's WAN1 port goes dark.",
+      "expect": "Staff move to Broadband 2 and share it with the guests. Nobody notices.",
+      "cuts": [
+        {
+          "cable": "FortiGate:port2",
+          "member": "port2",
+          "kind": "circuit"
+        }
+      ]
+    },
+    {
+      "id": "cut-bb2",
+      "title": "Cut Broadband 2",
+      "blurb": "The second provider's handoff fails. WAN2 goes dark.",
+      "expect": "Guests move over to Broadband 1. Staff never left it.",
+      "cuts": [
+        {
+          "cable": "FortiGate:port4",
+          "member": "port4",
+          "kind": "circuit"
+        }
+      ]
+    },
+    {
+      "id": "cut-both",
+      "title": "Lose both broadband circuits",
+      "blurb": "A storm takes out both providers at once. Only cellular is left.",
+      "expect": "Staff move to cellular and keep working. Guests go dark, on purpose: policy keeps them off the metered link.",
+      "cuts": [
+        {
+          "cable": "FortiGate:port2",
+          "member": "port2",
+          "kind": "circuit"
+        },
+        {
+          "cable": "FortiGate:port4",
+          "member": "port4",
+          "kind": "circuit"
+        }
+      ]
+    },
+    {
+      "id": "isp1-upstream",
+      "title": "Broadband 1 provider outage",
+      "blurb": "The cable is fine and the modem lights are green, but the provider's core is down. Only the SLA probes notice.",
+      "expect": "Staff move to Broadband 2 as soon as the probes fail, even though WAN1 still has link.",
+      "cuts": [
+        {
+          "cable": "ISP Router_1:port2",
+          "member": "port2",
+          "kind": "upstream"
+        }
+      ]
+    },
+    {
+      "id": "both-upstream",
+      "title": "Both broadband providers down upstream",
+      "blurb": "Both ports stay up, both modems look healthy, and neither goes anywhere.",
+      "expect": "Same outcome as losing both circuits, found by the probes alone: staff on cellular, guests dark.",
+      "cuts": [
+        {
+          "cable": "ISP Router_1:port2",
+          "member": "port2",
+          "kind": "upstream"
+        },
+        {
+          "cable": "ISP Router_2:port2",
+          "member": "port4",
+          "kind": "upstream"
+        }
+      ]
+    },
+    {
+      "id": "cut-cell",
+      "title": "Cut the cellular link",
+      "blurb": "The cellular modem dies on a normal day.",
+      "expect": "Nothing visible changes. Cellular was idle, standing by.",
+      "cuts": [
+        {
+          "cable": "FortiGate:port5",
+          "member": "port5",
+          "kind": "circuit"
+        }
+      ]
+    }
+  ]
+}
