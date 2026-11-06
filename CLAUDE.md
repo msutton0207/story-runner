@@ -10,7 +10,7 @@ full-time developer: explain changes plainly and give exact commands to run.
 
     docker-compose.yml        two services: story-runner (port 80) and ai-basics (port 3100)
     Dockerfile, app/main.py   Python FastAPI backend: serves static/ and the /api/* endpoints
-    static/index.html         "Demo Lab" landing page, one card per demo
+    static/index.html         "Demo Lab" landing page, one card per demo (clean style)
     static/two-fridays/       Two Fridays demo (single HTML file)
     static/sdwan/, zones/     Keep the Lights On, Who Gets the Backup (SD-WAN; app/sdwan.py)
     ai-basics/                AI Basics Lab: zero-dependency Node server + public/story.html
@@ -98,8 +98,9 @@ snapshots: Story-<device>-Zones-v<n> for this fabric, Story-<device>-SDWAN-v<n> 
 
 1. Put it in its own folder under `static/` (or its own container for a separate server).
 2. Add a card to `static/index.html`.
-3. Keep the comic style and palette, label simulated data, and add a reset if it
-   changes lab state.
+3. Use the clean style of the landing page and the SD-WAN demos (Inter, blue header, white
+   cards, light and dark themes; Two Fridays is the one comic-style holdover), label
+   simulated data, and add a reset if it changes lab state.
 
 ## Checks before pushing
 

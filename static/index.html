@@ -5,100 +5,111 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Demo Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: title splash, then a grid of comic-panel cards, one per demo. Same red + ink palette as the demos. */
+/* Landing page in the same clean style as the SD-WAN demos: blue header, white cards, one card per demo. */
 :root{
-  --red:#DA291C; --ink:#131E29; --cap:#FFD100; --ok:#00BF65;
-  --bg:#FFF8EC; --dots:rgba(19,30,41,.07); --surface:#FFFFFF; --line:#131E29; --fg:#131E29; --muted:#4F5F6C; --shadow:#131E29; --tint:#FFE1DD; --tint2:#D9F3F8;
-  --f-head:"Fredoka","Arial Rounded MT Bold","Helvetica Neue",Arial,sans-serif;
-  --f-body:"Nunito","Helvetica Neue",Arial,sans-serif;
+  --bg:#F4F6FA; --surface:#FFFFFF; --fg:#0F1B2D; --muted:#5B6878; --line:#DDE3EC; --soft:#EEF2F8;
+  --brand:#2F6FDB; --brand-ink:#FFFFFF; --ok:#14A44D; --ok-soft:#E3F6EA; --bad:#DA291C; --warn:#E8A400;
+  --idle:#9AA6B5; --art:#EEF3FC; --art-line:#B8C3D2; --violet:#8A5CD1;
+  --f:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141B24;--dots:rgba(255,255,255,.05);--surface:#1E2A37;--line:#E9EEF0;--fg:#F2F5F6;--muted:#B4C0C8;--shadow:#000;--tint:#40201E;--tint2:#173843;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#141B24;--dots:rgba(255,255,255,.05);--surface:#1E2A37;--line:#E9EEF0;--fg:#F2F5F6;--muted:#B4C0C8;--shadow:#000;--tint:#40201E;--tint2:#173843;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D141F;--surface:#151F2D;--fg:#E8EEF6;--muted:#9AA8B9;--line:#273447;--soft:#1B2738;--brand:#4C86EA;--ok-soft:#10301E;--idle:#5D6B7C;--art:#1A2538;--art-line:#3A4A60;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D141F;--surface:#151F2D;--fg:#E8EEF6;--muted:#9AA8B9;--line:#273447;--soft:#1B2738;--brand:#4C86EA;--ok-soft:#10301E;--idle:#5D6B7C;--art:#1A2538;--art-line:#3A4A60;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);background-image:radial-gradient(var(--dots) 1.4px,transparent 1.6px);background-size:18px 18px;color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5}
-.wrap{max-width:1100px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
-header{position:relative;overflow:hidden;background:var(--ink);color:#fff;border:3px solid var(--line);box-shadow:6px 6px 0 var(--red);border-radius:18px;padding:28px;isolation:isolate}
-header svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
-.tag{display:inline-block;font-family:var(--f-head);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;background:var(--cap);color:var(--ink);border:2px solid var(--ink);padding:2px 10px;border-radius:6px;transform:rotate(-2deg)}
-h1{font-family:var(--f-head);font-weight:700;font-size:clamp(34px,5vw,56px);line-height:1;margin:12px 0 8px;text-shadow:3px 3px 0 rgba(0,0,0,.35)}
-h1 em{font-style:normal;color:var(--red);-webkit-text-stroke:1.5px #fff;paint-order:stroke fill}
-header p{margin:0;max-width:52ch;color:#C3CED4;font-weight:700}
-.status{margin-top:14px;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:3px 12px}
-.status i{width:9px;height:9px;border-radius:50%;background:#9CABB5}
-.status.live i{background:var(--ok)}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
-.card{display:grid;grid-template-rows:auto 1fr auto;background:var(--surface);color:var(--fg);text-decoration:none;border:3px solid var(--line);border-radius:16px;box-shadow:6px 6px 0 var(--shadow);overflow:hidden;transition:transform .1s,box-shadow .1s}
-a.card:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--shadow)}
-a.card:active{transform:translate(4px,4px);box-shadow:2px 2px 0 var(--shadow)}
-a.card:focus-visible{outline:3px solid var(--red);outline-offset:4px}
-.art{height:150px;border-bottom:3px solid var(--line);display:grid;place-items:center}
-.art svg{height:120px;width:auto}
-.body{padding:16px 18px;display:grid;gap:8px;align-content:start}
-.body h2{font-family:var(--f-head);font-weight:700;font-size:26px;line-height:1.1;margin:0}
-.body p{margin:0;color:var(--muted);font-weight:700;font-size:15px}
-.meta{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 16px}
-.chip{font-size:12px;font-weight:800;border:2px solid var(--line);border-radius:8px;padding:1px 8px}
-.chip.go{background:var(--red);color:#fff}
-.card.soon{pointer-events:none;opacity:.75;box-shadow:6px 6px 0 var(--muted);border-style:dashed}
-.chip.wait{background:var(--cap);color:var(--ink)}
-footer{color:var(--muted);font-size:13px;font-weight:700}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:15px;letter-spacing:-.01em}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--idle)}
+.status.live i{background:var(--ok)} .status.sim i{background:var(--warn)} .status.err i{background:var(--bad)}
+header{background:var(--brand);color:var(--brand-ink);border-radius:14px;padding:26px 24px;display:grid;gap:8px}
+header .eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+h1{font-size:clamp(28px,4vw,42px);font-weight:700;line-height:1.08;margin:0;letter-spacing:-.015em}
+header p{margin:0;max-width:62ch;opacity:.92}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:4px}
+h2{font-size:17px;font-weight:700;margin:0}
+.sub{font-size:13px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px}
+.card{display:grid;grid-template-rows:auto 1fr auto;background:var(--surface);color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:border-color .15s,box-shadow .15s,transform .15s}
+a.card:hover{border-color:var(--brand);box-shadow:0 6px 20px rgba(15,27,45,.08);transform:translateY(-2px)}
+a.card:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+.art{height:132px;background:var(--art);border-bottom:1px solid var(--line);display:grid;place-items:center}
+.art svg{height:96px;width:auto;overflow:visible}
+.art .ln{fill:none;stroke:var(--art-line);stroke-width:3;stroke-linecap:round}
+.art .nd{fill:var(--surface);stroke:var(--art-line);stroke-width:2}
+.art .ink{fill:none;stroke:var(--fg);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.body{padding:16px 18px 6px;display:grid;gap:6px;align-content:start}
+.body h3{font-size:19px;font-weight:700;line-height:1.2;margin:0;letter-spacing:-.01em}
+.body p{margin:0;color:var(--muted);font-size:14px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px 16px;align-items:center}
+.chip{font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;background:var(--soft);color:var(--muted)}
+.chip.go{background:var(--brand);color:#fff}
+.chip.live{background:var(--ok-soft);color:var(--ok)}
+.chip.wait{background:#FFF1D6;color:#7A5200}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.wait{background:#3A2D10;color:#F0C873}}
+.card.soon{opacity:.7;pointer-events:none}
+.card.soon .art{filter:grayscale(.6)}
+footer{color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <svg viewBox="0 0 1000 220" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
-      <g><polygon points="880,110 1000,-40 1000,30" fill="rgba(218,41,28,.55)"/><polygon points="880,110 1000,70 1000,140" fill="rgba(255,255,255,.07)"/><polygon points="880,110 1000,180 1000,280" fill="rgba(218,41,28,.45)"/><polygon points="880,110 820,280 700,280" fill="rgba(255,255,255,.06)"/><polygon points="880,110 560,280 440,280" fill="rgba(218,41,28,.35)"/><polygon points="880,110 720,-60 620,-60" fill="rgba(218,41,28,.4)"/><polygon points="880,110 460,-60 380,-60" fill="rgba(255,255,255,.06)"/><circle cx="880" cy="110" r="24" fill="#DA291C"/></g>
-    </svg>
-    <span class="tag">Pick a story</span>
-    <h1>The <em>Demo</em> Lab</h1>
-    <p>Story-driven demos that run against real gear. Pick one, talk, click, and let the lab do the work.</p>
+  <div class="top">
+    <span class="brand">Story Runner</span>
     <span class="status" id="status"><i></i><span id="status-t">Checking the lab…</span></span>
+  </div>
+
+  <header>
+    <span class="eyebrow">Pick a story</span>
+    <h1>The Demo Lab</h1>
+    <p>Story-driven demos that run against real gear. Pick one, talk, click, and let the lab do the work.</p>
   </header>
+
+  <div class="section-h"><h2>Demos</h2><span class="sub">Live-lab demos say so on their card; anything simulated is labelled on screen.</span></div>
 
   <main class="cards">
     <a class="card" href="/two-fridays/">
-      <div class="art" style="background:var(--tint)">
-        <svg viewBox="0 0 120 100" aria-hidden="true"><circle cx="60" cy="54" r="30" fill="#fff" stroke="#131E29" stroke-width="3"/><circle cx="38" cy="26" r="10" fill="#DA291C" stroke="#131E29" stroke-width="3"/><circle cx="82" cy="26" r="10" fill="#DA291C" stroke="#131E29" stroke-width="3"/><path d="M60 54V36M60 54l12 6" fill="none" stroke="#131E29" stroke-width="3" stroke-linecap="round"/><path d="M40 82l-6 8M80 82l6 8" stroke="#131E29" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="54" r="3" fill="#131E29"/></svg>
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 120 100"><circle class="nd" cx="60" cy="54" r="30"/><circle cx="38" cy="26" r="9" fill="#DA291C"/><circle cx="82" cy="26" r="9" fill="#DA291C"/><path class="ink" d="M60 54V37M60 54l12 7M41 82l-6 8M79 82l6 8"/><circle cx="60" cy="54" r="3" fill="var(--fg)"/></svg>
       </div>
       <div class="body">
-        <h2>Two Fridays</h2>
+        <h3>Two Fridays</h3>
         <p>One lean IT shop's Friday before the long weekend, told twice: the usual way, and with one Fabric.</p>
       </div>
       <div class="meta"><span class="chip go">Open</span><span class="chip">Higher Ed · City/County</span><span class="chip">~20 min</span></div>
     </a>
 
     <a class="card" href="/sdwan/">
-      <div class="art" style="background:var(--tint2)">
-        <svg viewBox="0 0 120 100" aria-hidden="true"><rect x="10" y="38" width="30" height="24" rx="5" fill="#DA291C" stroke="#131E29" stroke-width="3"/><path d="M40 44C60 44 62 22 84 22M40 56C60 56 62 78 84 78" fill="none" stroke="#131E29" stroke-width="5" stroke-linecap="round"/><path d="M40 44C60 44 62 22 84 22" fill="none" stroke="#00BF65" stroke-width="2.5" stroke-linecap="round"/><path d="M40 56C60 56 62 78 84 78" fill="none" stroke="#FFD100" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4"/><circle cx="96" cy="22" r="12" fill="#fff" stroke="#131E29" stroke-width="3"/><circle cx="96" cy="78" r="12" fill="#fff" stroke="#131E29" stroke-width="3"/><path d="M62 30l8 8M70 30l-8 8" stroke="#DA291C" stroke-width="3.5" stroke-linecap="round"/></svg>
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 140 100"><path d="M34 46C60 46 62 24 92 24" fill="none" stroke="#14A44D" stroke-width="5" stroke-linecap="round"/><path d="M34 54C60 54 62 76 92 76" fill="none" stroke="#14A44D" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 9"/><rect x="8" y="34" width="28" height="32" rx="6" fill="#DA291C"/><circle class="nd" cx="104" cy="24" r="12"/><circle class="nd" cx="104" cy="76" r="12"/><g transform="translate(64 34)"><circle r="9" fill="#DA291C"/><path d="M-3 -3L3 3M3 -3L-3 3" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g></svg>
       </div>
       <div class="body">
-        <h2>Keep the Lights On</h2>
+        <h3>Keep the Lights On</h3>
         <p>SD-WAN with broadband and cellular. Cut a circuit or kill an ISP for real and watch the users stay online.</p>
       </div>
-      <div class="meta"><span class="chip go">Open</span><span class="chip">Live lab</span><span class="chip">~10 min</span></div>
+      <div class="meta"><span class="chip go">Open</span><span class="chip live">Live lab</span><span class="chip">~10 min</span></div>
     </a>
 
     <a class="card" href="/zones/">
-      <div class="art" style="background:var(--tint)">
-        <svg viewBox="0 0 120 100" aria-hidden="true"><rect x="8" y="38" width="28" height="24" rx="5" fill="#DA291C" stroke="#131E29" stroke-width="3"/><rect x="62" y="6" width="50" height="58" rx="8" fill="none" stroke="#131E29" stroke-width="2.5" stroke-dasharray="5 4"/><rect x="62" y="70" width="50" height="26" rx="8" fill="none" stroke="#131E29" stroke-width="2.5" stroke-dasharray="5 4"/><path d="M36 44C52 44 56 20 78 20M36 50H78M36 56C52 56 56 83 78 83" fill="none" stroke="#131E29" stroke-width="4.5" stroke-linecap="round"/><path d="M47 30l7 7M54 30l-7 7M47 46l7 7M54 46l-7 7" stroke="#DA291C" stroke-width="3" stroke-linecap="round"/><path d="M36 56C52 56 56 83 78 83" fill="none" stroke="#00BF65" stroke-width="2" stroke-linecap="round"/><circle cx="90" cy="20" r="8" fill="#fff" stroke="#131E29" stroke-width="2.5"/><circle cx="90" cy="50" r="8" fill="#fff" stroke="#131E29" stroke-width="2.5"/><circle cx="90" cy="83" r="8" fill="#FFD100" stroke="#131E29" stroke-width="2.5"/></svg>
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 150 100"><rect x="84" y="4" width="46" height="60" rx="9" fill="none" stroke="var(--art-line)" stroke-width="2" stroke-dasharray="5 4"/><rect x="84" y="70" width="46" height="28" rx="9" fill="none" stroke="var(--art-line)" stroke-width="2" stroke-dasharray="5 4"/><path d="M36 44C56 44 60 20 96 20M36 50H96" fill="none" stroke="#DA291C" stroke-width="4" stroke-linecap="round" stroke-dasharray="6 6"/><path d="M36 56C56 56 60 84 96 84" fill="none" stroke="#14A44D" stroke-width="5" stroke-linecap="round"/><rect x="8" y="34" width="28" height="32" rx="6" fill="#DA291C"/><circle class="nd" cx="107" cy="20" r="9"/><circle class="nd" cx="107" cy="48" r="9"/><circle class="nd" cx="107" cy="84" r="9"/><rect x="44" y="70" width="30" height="14" rx="7" fill="var(--brand)"/><rect x="44" y="12" width="30" height="14" rx="7" fill="#8A5CD1" opacity=".45"/></svg>
       </div>
       <div class="body">
-        <h2>Who Gets the Backup</h2>
+        <h3>Who Gets the Backup</h3>
         <p>Two broadband circuits, one cellular backup, staff and guests. Lose both broadband links and watch staff keep working while guests go dark, on purpose.</p>
       </div>
-      <div class="meta"><span class="chip go">Open</span><span class="chip">Live lab</span><span class="chip">SD-WAN zones</span></div>
+      <div class="meta"><span class="chip go">Open</span><span class="chip live">Live lab</span><span class="chip">SD-WAN zones</span></div>
     </a>
 
     <a class="card soon" href="/ai-basics/" id="ai-card">
-      <div class="art" style="background:var(--tint2)">
-        <svg viewBox="0 0 120 100" aria-hidden="true"><rect x="22" y="20" width="76" height="56" rx="10" fill="#fff" stroke="#131E29" stroke-width="3"/><path d="M42 76l-6 14 18-14" fill="#fff" stroke="#131E29" stroke-width="3" stroke-linejoin="round"/><rect x="32" y="34" width="14" height="10" rx="3" fill="#6AD1E3" stroke="#131E29" stroke-width="2"/><rect x="50" y="34" width="20" height="10" rx="3" fill="#DA291C" stroke="#131E29" stroke-width="2"/><rect x="74" y="34" width="14" height="10" rx="3" fill="#FFD100" stroke="#131E29" stroke-width="2"/><rect x="32" y="50" width="22" height="10" rx="3" fill="#00BF65" stroke="#131E29" stroke-width="2"/><rect x="58" y="50" width="12" height="10" rx="3" fill="#6AD1E3" stroke="#131E29" stroke-width="2"/></svg>
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 120 100"><rect class="nd" x="20" y="16" width="80" height="58" rx="10"/><path class="nd" d="M40 74l-6 14 18-14"/><rect x="31" y="30" width="15" height="10" rx="3" fill="#6AA9E8"/><rect x="50" y="30" width="21" height="10" rx="3" fill="#DA291C"/><rect x="75" y="30" width="14" height="10" rx="3" fill="#E8A400"/><rect x="31" y="47" width="23" height="10" rx="3" fill="#14A44D"/><rect x="58" y="47" width="13" height="10" rx="3" fill="#8A5CD1"/></svg>
       </div>
       <div class="body">
-        <h2>AI Basics Lab</h2>
+        <h3>AI Basics Lab</h3>
         <p>What a model really does: tokens, sampling, why it doesn't remember, and what changes when you give it tools.</p>
       </div>
       <div class="meta"><span class="chip wait" id="ai-chip">Checking…</span><span class="chip">Hands-on</span><span class="chip">Claude API</span></div>
@@ -110,8 +121,8 @@ footer{color:var(--muted);font-size:13px;font-weight:700}
 <script>
 fetch('/api/health').then(r=>r.json()).then(h=>{
   const s=document.getElementById('status'), t=document.getElementById('status-t');
-  if(h.mode==='live'){s.classList.add('live'); t.textContent='Connected to the lab';} else t.textContent='Simulated mode';
-}).catch(()=>{document.getElementById('status-t').textContent='Backend not reachable';});
+  if(h.mode==='live'){s.classList.add('live'); t.textContent='Connected to the lab';} else {s.classList.add('sim'); t.textContent='Simulated mode';}
+}).catch(()=>{document.getElementById('status').classList.add('err'); document.getElementById('status-t').textContent='Backend not reachable';});
 // The AI lab runs as its own container on port 3100 of this same server.
 const aiURL=location.protocol+'//'+location.hostname+':3100/';
 const aiCard=document.getElementById('ai-card'); aiCard.href=aiURL;
